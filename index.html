@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Mental Interativo com Notas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior: none; 
+        }
+        .node {
+            cursor: grab;
+            fill: #f0f0f0; 
+            stroke: #333; 
+            stroke-width: 1.5px;
+            border-radius: 8px; 
+        }
+        .node-text {
+            font-size: 14px;
+            fill: #333; 
+            text-anchor: middle; 
+            dominant-baseline: middle; 
+            pointer-events: none; 
+            user-select: none; 
+        }
+        .node.selected {
+            stroke: #007bff; 
+            stroke-width: 3px;
+        }
+        .line {
+            stroke: #666; 
+            stroke-width: 2px;
+            fill: none; 
+        }
+        .note-icon {
+            fill: #007bff;
+            cursor: pointer;
+            stroke: white;
+            stroke-width: 0.5px;
+        }
+        .note-icon:hover {
+            fill: #0056b3;
+        }
+
+        /* Painel de Comandos */
+        .controls {
+            position: fixed;
+            top: 20px; 
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.95); 
+            padding: 20px; 
+            border-radius: 8px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2); 
+            z-index: 1000;
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            margin-top: 50px; 
+        }
+        .controls.hidden { 
+            transform: translateX(-110%); 
+            opacity: 0;
+            pointer-events: none; 
+        }
+
+        .control-button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 18px; 
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: none;
+            width: 100%; 
+            text-align: center;
+        }
+        .control-button:hover {
+            background-color: #0056b3;
+        }
+        .control-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .control-input {
+            padding: 10px; 
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 10px; 
+            width: 100%; 
+        }
+        .message-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 1001;
+            display: none; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .message-box.error {
+            background-color: #f44336; 
+        }
+        #mindMapContainer {
+            width: 100%;
+            height: 100vh; 
+            overflow: hidden; 
+            background-color: #f9f9f9; 
+            position: relative;
+        }
+        #mindMapSvg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #toggleMenuBtn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1005; 
+            background-color: #007bff; 
+            color: white; 
+            border: none;
+            border-radius: 8px; 
+            padding: 8px; 
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex; 
+            align-items: center;
+            justify-content: center;
+            width: 40px; 
+            height: 40px; 
+        }
+        #toggleMenuBtn:hover {
+            background-color: #0056b3;
+        }
+        #toggleMenuBtn svg {
+            width: 24px; 
+            height: 24px;
+        }
+
+        /* Painel de Notas */
+        #notesPanel {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 35%; /* Largura do painel de notas */
+            max-width: 500px; /* Largura máxima */
+            min-width: 300px; /* Largura mínima */
+            height: 100vh;
+            background-color: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1010; /* Acima do menu de comandos */
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        #notesPanel.visible {
+            transform: translateX(0);
+        }
+        #notesPanel h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        #noteTextArea {
+            width: 100%;
+            height: 200px; /* Altura inicial do campo de texto */
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            resize: vertical; /* Permite redimensionamento vertical */
+        }
+        .notes-toolbar label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.875rem;
+            color: #555;
+        }
+        .notes-toolbar select, .notes-toolbar input[type="text"], .notes-toolbar input[type="number"], .notes-toolbar input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 0.875rem;
+        }
+        #imagePreview {
+            max-width: 100%;
+            max-height: 150px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            object-fit: contain;
+            border: 1px solid #eee;
+        }
+        .notes-actions button {
+            margin-right: 10px;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <button id="toggleMenuBtn" title="Alternar Menu"></button>
+
+    <div id="mindMapContainer">
+        <svg id="mindMapSvg"></svg>
+    </div>
+
+    <div id="controlsMenu" class="controls space-y-4 hidden"> 
+        <div>
+            <input type="text" id="nodeText" class="control-input" placeholder="Texto do nó">
+            <button id="addNodeBtn" class="control-button">Adicionar Nó Raiz</button>
+        </div>
+        <div>
+            <button id="addChildBtn" class="control-button" disabled>Adicionar Filho</button>
+        </div>
+        <div>
+            <button id="editNodeBtn" class="control-button" disabled>Editar Nó</button>
+        </div>
+        <div>
+            <button id="deleteNodeBtn" class="control-button" disabled>Eliminar Nó</button>
+        </div>
+        <div> <button id="addEditNoteBtn" class="control-button" disabled>Adicionar/Editar Nota</button>
+        </div>
+        <div class="text-sm text-gray-700 pt-2"> 
+            <span class="font-semibold">Nó Selecionado:</span>
+            <span id="selectedNodeDisplay" class="block mt-1 p-2 bg-gray-100 rounded">Nenhum</span> 
+        </div>
+        <div class="text-xs text-gray-500 pt-2"> 
+            Use o scroll do rato para zoom. <br>Clique e arraste o fundo para mover.
+        </div>
+    </div>
+
+    <div id="notesPanel">
+        <h3>Editar Nota do Nó</h3>
+        <div class="notes-toolbar space-y-3">
+            <div>
+                <label for="noteTextArea">Texto da Nota:</label>
+                <textarea id="noteTextArea"></textarea>
+            </div>
+            <div>
+                <label for="noteFontFamily">Fonte:</label>
+                <select id="noteFontFamily">
+                    <option value="Inter, sans-serif">Inter</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="Verdana, sans-serif">Verdana</option>
+                    <option value="Times New Roman, serif">Times New Roman</option>
+                    <option value="Courier New, monospace">Courier New</option>
+                </select>
+            </div>
+            <div>
+                <label for="noteFontSize">Tamanho da Fonte (px):</label>
+                <input type="number" id="noteFontSize" value="14" min="8" max="72">
+            </div>
+            <div>
+                <label for="noteImageUrl">URL da Imagem:</label>
+                <input type="text" id="noteImageUrl" placeholder="Cole o URL da imagem aqui">
+                <img id="imagePreview" src="#" alt="Pré-visualização da imagem" style="display:none;">
+                 <!-- <label for="noteImageFile">Ou carregue uma imagem:</label>
+                <input type="file" id="noteImageFile" accept="image/*"> -->
+            </div>
+            <div>
+                <label for="noteDocumentName">Nome do Documento Anexado:</label>
+                <input type="text" id="noteDocumentName" placeholder="Ex: relatorio.pdf">
+                <!-- <label for="noteDocumentFile">Ou carregue um documento:</label>
+                <input type="file" id="noteDocumentFile"> -->
+            </div>
+        </div>
+        <div class="notes-actions mt-auto pt-4">
+            <button id="saveNoteBtn" class="control-button">Guardar Nota</button>
+            <button id="closeNotesPanelBtn" class="control-button bg-gray-500 hover:bg-gray-600">Fechar</button>
+        </div>
+    </div>
+
+    <div id="messageBox" class="message-box">Mensagem</div>
+
+    <script>
+        // --- Elementos da UI ---
+        const svg = document.getElementById('mindMapSvg');
+        const nodeTextInput = document.getElementById('nodeText');
+        const addNodeBtn = document.getElementById('addNodeBtn');
+        const addChildBtn = document.getElementById('addChildBtn');
+        const editNodeBtn = document.getElementById('editNodeBtn');
+        const deleteNodeBtn = document.getElementById('deleteNodeBtn');
+        const addEditNoteBtn = document.getElementById('addEditNoteBtn'); // Novo botão
+        const selectedNodeDisplay = document.getElementById('selectedNodeDisplay');
+        const messageBox = document.getElementById('messageBox');
+        const mindMapContainer = document.getElementById('mindMapContainer');
+        const toggleMenuBtn = document.getElementById('toggleMenuBtn');
+        const controlsMenu = document.getElementById('controlsMenu');
+
+        // Elementos do Painel de Notas
+        const notesPanel = document.getElementById('notesPanel');
+        const noteTextArea = document.getElementById('noteTextArea');
+        const noteFontFamily = document.getElementById('noteFontFamily');
+        const noteFontSize = document.getElementById('noteFontSize');
+        const noteImageUrl = document.getElementById('noteImageUrl');
+        const imagePreview = document.getElementById('imagePreview');
+        // const noteImageFile = document.getElementById('noteImageFile'); // Para carregamento futuro
+        const noteDocumentName = document.getElementById('noteDocumentName');
+        // const noteDocumentFile = document.getElementById('noteDocumentFile'); // Para carregamento futuro
+        const saveNoteBtn = document.getElementById('saveNoteBtn');
+        const closeNotesPanelBtn = document.getElementById('closeNotesPanelBtn');
+        let currentlyEditingNodeId = null;
+
+
+        // --- Ícones SVG ---
+        const hamburgerIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
+        const closeIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        const noteIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="note-indicator-icon"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+
+
+        // --- Estado do Mapa Mental ---
+        let nodes = [];
+        let lines = []; 
+        let selectedNodeId = null;
+        let nextNodeId = 0;
+        let isDraggingNode = false;
+        let dragOffsetX, dragOffsetY;
+        let draggedNodeElement = null;
+        let viewBox = { x: 0, y: 0, w: mindMapContainer.clientWidth, h: mindMapContainer.clientHeight };
+        let isPanning = false;
+        let lastPanPoint = { x: 0, y: 0 };
+
+        // --- Inicialização ---
+        svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+        toggleMenuBtn.innerHTML = hamburgerIconSVG; 
+
+        // --- Event Listeners ---
+        toggleMenuBtn.addEventListener('click', () => {
+            controlsMenu.classList.toggle('hidden');
+            toggleMenuBtn.innerHTML = controlsMenu.classList.contains('hidden') ? hamburgerIconSVG : closeIconSVG;
+            toggleMenuBtn.title = controlsMenu.classList.contains('hidden') ? "Abrir Comandos" : "Fechar Comandos";
+        });
+
+        // Event listener para o novo botão Adicionar/Editar Nota
+        addEditNoteBtn.addEventListener('click', () => {
+            if (selectedNodeId !== null) {
+                openNotesPanel(selectedNodeId);
+            } else {
+                showMessage('Por favor, selecione um nó primeiro para adicionar ou editar uma nota.', 'error');
+            }
+        });
+
+
+        // Funções do Painel de Notas
+        noteFontFamily.addEventListener('change', (e) => { noteTextArea.style.fontFamily = e.target.value; });
+        noteFontSize.addEventListener('input', (e) => { noteTextArea.style.fontSize = `${e.target.value}px`; });
+        noteImageUrl.addEventListener('input', (e) => {
+            if (e.target.value.trim() !== '') {
+                imagePreview.src = e.target.value;
+                imagePreview.style.display = 'block';
+            } else {
+                imagePreview.style.display = 'none';
+            }
+        });
+        imagePreview.onerror = () => {
+            imagePreview.style.display = 'none';
+            // showMessage('URL da imagem inválido ou imagem não encontrada.', 'error');
+        };
+
+
+        saveNoteBtn.addEventListener('click', () => {
+            if (currentlyEditingNodeId === null) return;
+            const node = nodes.find(n => n.id === currentlyEditingNodeId);
+            if (node) {
+                node.notes.text = noteTextArea.value;
+                node.notes.fontFamily = noteFontFamily.value;
+                node.notes.fontSize = `${noteFontSize.value}px`;
+                node.notes.imageUrl = noteImageUrl.value.trim();
+                node.notes.documentName = noteDocumentName.value.trim();
+                
+                showMessage('Nota guardada com sucesso!', 'success');
+                closeNotesPanel();
+                renderMindMap(); // Para atualizar o ícone de nota, se necessário
+            }
+        });
+
+        closeNotesPanelBtn.addEventListener('click', closeNotesPanel);
+
+        function openNotesPanel(nodeId) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node) return;
+
+            currentlyEditingNodeId = nodeId;
+            noteTextArea.value = node.notes.text;
+            noteFontFamily.value = node.notes.fontFamily;
+            noteFontSize.value = parseInt(node.notes.fontSize) || 14;
+            noteImageUrl.value = node.notes.imageUrl;
+            noteDocumentName.value = node.notes.documentName;
+
+            noteTextArea.style.fontFamily = node.notes.fontFamily;
+            noteTextArea.style.fontSize = node.notes.fontSize;
+
+            if (node.notes.imageUrl) {
+                imagePreview.src = node.notes.imageUrl;
+                imagePreview.style.display = 'block';
+            } else {
+                imagePreview.style.display = 'none';
+            }
+
+            notesPanel.classList.add('visible');
+        }
+
+        function closeNotesPanel() {
+            notesPanel.classList.remove('visible');
+            currentlyEditingNodeId = null;
+        }
+
+        // --- Funções do Mapa Mental ---
+        function showMessage(text, type = 'success', duration = 3000) {
+            messageBox.textContent = text;
+            messageBox.className = 'message-box'; 
+            if (type === 'error') messageBox.classList.add('error');
+            messageBox.style.display = 'block';
+            setTimeout(() => { messageBox.style.display = 'none'; }, duration);
+        }
+
+        function createNode(text, x, y, parentId = null, isRoot = false) {
+            if (!text.trim()) {
+                showMessage('O texto do nó não pode estar vazio.', 'error');
+                return null;
+            }
+            const id = nextNodeId++;
+            const node = {
+                id, text, x, y,
+                width: Math.max(100, text.length * 8 + 20), 
+                height: 40,
+                parentId, childrenIds: [], isRoot,
+                notes: { // Nova estrutura para notas
+                    text: '',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '14px',
+                    imageUrl: '',
+                    documentName: ''
+                }
+            };
+            nodes.push(node);
+            if (parentId !== null) {
+                const parentNode = nodes.find(n => n.id === parentId);
+                if (parentNode) parentNode.childrenIds.push(id);
+            }
+            return node;
+        }
+
+        function renderMindMap() {
+            svg.innerHTML = ''; 
+
+            lines.forEach(lineData => {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', lineData.pathString);
+                path.classList.add('line');
+                svg.appendChild(path);
+            });
+
+            nodes.forEach(node => {
+                const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                group.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+                group.dataset.id = node.id;
+
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('width', node.width);
+                rect.setAttribute('height', node.height);
+                rect.setAttribute('rx', 8); rect.setAttribute('ry', 8);
+                rect.classList.add('node');
+                if (node.id === selectedNodeId) rect.classList.add('selected');
+
+                const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                textElement.setAttribute('x', node.width / 2);
+                textElement.setAttribute('y', node.height / 2);
+                textElement.textContent = node.text;
+                textElement.classList.add('node-text');
+
+                group.appendChild(rect);
+                group.appendChild(textElement);
+
+                // Adicionar ícone de nota se houver notas
+                const hasNoteContent = node.notes.text.trim() !== '' || node.notes.imageUrl.trim() !== '' || node.notes.documentName.trim() !== '';
+                if (hasNoteContent) {
+                    const iconG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    iconG.innerHTML = noteIconSVG; // Usar o SVG como string
+                    // Posicionar o ícone, por exemplo, no canto superior direito do nó
+                    const iconX = node.width - 16; // 16 é um valor arbitrário para o tamanho/posição do ícone
+                    const iconY = 4;
+                    iconG.setAttribute('transform', `translate(${iconX}, ${iconY})`);
+                    iconG.classList.add('note-icon');
+                    iconG.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevenir que o clique no ícone selecione o nó ou inicie o arrasto
+                        openNotesPanel(node.id);
+                    });
+                    group.appendChild(iconG);
+                }
+                
+                svg.appendChild(group);
+                group.addEventListener('mousedown', (e) => handleNodeMouseDown(e, node, group));
+                group.addEventListener('click', (e) => handleNodeClick(e, node.id)); // Adicionado para garantir seleção ao clicar no nó, não apenas no mousedown
+            });
+            updateButtonStates();
+        }
+
+        function updateLines() {
+            lines = []; 
+            nodes.forEach(node => {
+                if (node.parentId !== null) {
+                    const parentNode = nodes.find(n => n.id === node.parentId);
+                    const childNode = node; 
+                    if (parentNode && childNode) {
+                        const startX = parentNode.x + parentNode.width / 2;
+                        const startY = parentNode.y + parentNode.height / 2;
+                        const endX = childNode.x + childNode.width / 2;
+                        const endY = childNode.y + childNode.height / 2;
+                        const cp1x = startX + (endX - startX) * 0.5; 
+                        const cp1y = startY;                         
+                        const cp2x = startX + (endX - startX) * 0.5; 
+                        const cp2y = endY;                         
+                        const pathString = `M ${startX},${startY} C ${cp1x},${cp1y} ${cp2x},${cp2y} ${endX},${endY}`;
+                        lines.push({ pathString: pathString });
+                    }
+                }
+            });
+        }
+
+        function handleNodeClick(event, nodeId) { 
+            // Não processar se o clique foi no ícone de nota
+            if (event.target.closest('.note-icon')) {
+                return;
+            }
+            event.stopPropagation(); 
+            selectedNodeId = nodeId;
+            const selectedNode = nodes.find(n => n.id === selectedNodeId);
+            selectedNodeDisplay.textContent = selectedNode ? selectedNode.text : 'Nenhum';
+            renderMindMap(); 
+        }
+
+        function handleNodeMouseDown(event, node, element) {
+            if (event.target.closest('.note-icon')) {
+                return;
+            }
+            event.stopPropagation();
+            if (event.button !== 0) return; 
+
+            // A seleção já é tratada em handleNodeClick para consistência.
+            // Se quiser seleção no mousedown também (mais rápido visualmente):
+            // selectedNodeId = node.id;
+            // const selected = nodes.find(n => n.id === selectedNodeId);
+            // selectedNodeDisplay.textContent = selected ? selected.text : 'Nenhum';
+            // renderMindMap(); 
+
+            isDraggingNode = true;
+            draggedNodeElement = element;
+            const CTM = svg.getScreenCTM().inverse();
+            const pt = svg.createSVGPoint();
+            pt.x = event.clientX; pt.y = event.clientY;
+            const svgP = pt.matrixTransform(CTM);
+            dragOffsetX = svgP.x - node.x; dragOffsetY = svgP.y - node.y;
+            draggedNodeElement.style.cursor = 'grabbing'; 
+        }
+
+        svg.addEventListener('mousemove', (e) => {
+            if (isDraggingNode && draggedNodeElement) {
+                e.preventDefault();
+                const CTM = svg.getScreenCTM().inverse();
+                const pt = svg.createSVGPoint();
+                pt.x = e.clientX; pt.y = e.clientY;
+                const svgP = pt.matrixTransform(CTM);
+                const nodeId = parseInt(draggedNodeElement.dataset.id);
+                const node = nodes.find(n => n.id === nodeId);
+                if (node) {
+                    node.x = svgP.x - dragOffsetX; node.y = svgP.y - dragOffsetY;
+                    updateLines(); 
+                    renderMindMap(); 
+                }
+            } else if (isPanning) {
+                e.preventDefault();
+                const dx = (e.clientX - lastPanPoint.x) * (viewBox.w / mindMapContainer.clientWidth);
+                const dy = (e.clientY - lastPanPoint.y) * (viewBox.h / mindMapContainer.clientHeight);
+                viewBox.x -= dx; viewBox.y -= dy;
+                svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+                lastPanPoint = { x: e.clientX, y: e.clientY };
+            }
+        });
+        
+        window.addEventListener('mouseup', () => { 
+            const previousIsDraggingNode = isDraggingNode;
+            if (isDraggingNode) {
+                if (draggedNodeElement) draggedNodeElement.style.cursor = 'grab';
+                isDraggingNode = false;
+            }
+            if (isPanning) {
+                isPanning = false;
+                svg.style.cursor = 'default';
+            }
+            if (previousIsDraggingNode && !isDraggingNode) draggedNodeElement = null;
+        });
+
+        svg.addEventListener('mousedown', (e) => {
+            if (e.target === svg || e.target === mindMapContainer) { 
+                 if (e.button !== 0) return; 
+                isPanning = true;
+                lastPanPoint = { x: e.clientX, y: e.clientY };
+                svg.style.cursor = 'move';
+                if (selectedNodeId !== null && !isDraggingNode) { 
+                    selectedNodeId = null;
+                    selectedNodeDisplay.textContent = 'Nenhum';
+                    renderMindMap();
+                }
+            }
+        });
+
+        mindMapContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomIntensity = 0.1;
+            const CTM = svg.getScreenCTM().inverse();
+            const pt = svg.createSVGPoint();
+            pt.x = e.clientX; pt.y = e.clientY;
+            const svgP = pt.matrixTransform(CTM); 
+            const dw = viewBox.w * Math.sign(e.deltaY) * zoomIntensity;
+            const dh = viewBox.h * Math.sign(e.deltaY) * zoomIntensity;
+            if (viewBox.w + dw > 50 && viewBox.h + dh > 50) { 
+                viewBox.x -= dw * (svgP.x - viewBox.x) / viewBox.w;
+                viewBox.y -= dh * (svgP.y - viewBox.y) / viewBox.h;
+                viewBox.w += dw; viewBox.h += dh;
+                svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+            }
+        });
+        
+        window.addEventListener('resize', () => {
+            const containerWidth = mindMapContainer.clientWidth;
+            const containerHeight = mindMapContainer.clientHeight;
+            const centerX = viewBox.x + viewBox.w / 2;
+            const centerY = viewBox.y + viewBox.h / 2;
+            viewBox.w = containerWidth; viewBox.h = containerHeight;
+            viewBox.x = centerX - viewBox.w / 2; viewBox.y = centerY - viewBox.h / 2;
+            svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+        });
+
+        addNodeBtn.addEventListener('click', () => {
+            const text = nodeTextInput.value;
+            if (nodes.some(n => n.isRoot)) {
+                showMessage('Já existe um nó raiz.', 'error'); return;
+            }
+            const initialX = viewBox.x + viewBox.w / 2 - 50; 
+            const initialY = viewBox.y + viewBox.h / 2 - 20; 
+            const newNode = createNode(text, initialX, initialY, null, true);
+            if (newNode) {
+                selectedNodeId = newNode.id; 
+                updateLines(); renderMindMap();
+                nodeTextInput.value = '';
+                showMessage(`Nó "${text}" adicionado como raiz.`);
+            }
+        });
+
+        addChildBtn.addEventListener('click', () => {
+            if (selectedNodeId === null) {
+                showMessage('Selecione um nó pai primeiro.', 'error'); return;
+            }
+            const text = nodeTextInput.value;
+            const parentNode = nodes.find(n => n.id === selectedNodeId);
+            if (parentNode) {
+                const childrenCount = parentNode.childrenIds.length;
+                const angleStep = Math.PI / (childrenCount + 3); 
+                const initialAngleOffset = -Math.PI / 2; 
+                const baseDistance = 100 + childrenCount * 15; 
+                const angle = initialAngleOffset + (childrenCount * angleStep) + (Math.random() * 0.2 - 0.1) ; 
+                const childX = parentNode.x + parentNode.width / 2 - 50 + Math.cos(angle) * baseDistance;
+                const childY = parentNode.y + parentNode.height / 2 - 20 + Math.sin(angle) * baseDistance;
+                const newNode = createNode(text, childX, childY, selectedNodeId);
+                if (newNode) {
+                    selectedNodeId = newNode.id; 
+                    updateLines(); renderMindMap();
+                    nodeTextInput.value = '';
+                    showMessage(`Nó "${text}" adicionado como filho de "${parentNode.text}".`);
+                }
+            }
+        });
+        
+        editNodeBtn.addEventListener('click', () => {
+            if (selectedNodeId === null) {
+                showMessage('Nenhum nó selecionado para editar.', 'error'); return;
+            }
+            const node = nodes.find(n => n.id === selectedNodeId);
+            if (node) {
+                const newText = prompt('Introduza o novo texto para o nó:', node.text);
+                if (newText !== null && newText.trim() !== '') {
+                    node.text = newText;
+                    node.width = Math.max(100, newText.length * 8 + 20); 
+                    updateLines(); renderMindMap();
+                    selectedNodeDisplay.textContent = newText; 
+                    showMessage(`Nó atualizado para "${newText}".`);
+                } else if (newText !== null && newText.trim() === '') {
+                    showMessage('O texto do nó não pode ficar vazio.', 'error');
+                }
+            }
+        });
+
+        deleteNodeBtn.addEventListener('click', () => {
+            if (selectedNodeId === null) {
+                showMessage('Nenhum nó selecionado para eliminar.', 'error'); return;
+            }
+            const nodeToDelete = nodes.find(n => n.id === selectedNodeId);
+            if (!nodeToDelete) return;
+            const confirmationText = `Tem a certeza que quer eliminar o nó "${nodeToDelete.text}"${nodeToDelete.childrenIds.length > 0 ? ' e todos os seus descendentes' : ''}?`;
+            if (!window.confirm(confirmationText)) return;
+            
+            let nodesToDeleteIds = [selectedNodeId];
+            let queue = [...nodeToDelete.childrenIds];
+            while(queue.length > 0) {
+                const currentId = queue.shift();
+                nodesToDeleteIds.push(currentId);
+                const currentNode = nodes.find(n => n.id === currentId);
+                if (currentNode) queue.push(...currentNode.childrenIds);
+            }
+            nodes = nodes.filter(n => !nodesToDeleteIds.includes(n.id));
+            nodes.forEach(n => {
+                n.childrenIds = n.childrenIds.filter(childId => !nodesToDeleteIds.includes(childId));
+            });
+            const oldSelectedText = nodeToDelete.text;
+            selectedNodeId = null; 
+            selectedNodeDisplay.textContent = 'Nenhum';
+            updateLines(); renderMindMap();
+            showMessage(`Nó "${oldSelectedText}" e descendentes eliminados.`);
+        });
+
+        function updateButtonStates() {
+            const hasRootNode = nodes.some(n => n.isRoot);
+            const nodeSelected = selectedNodeId !== null;
+
+            addNodeBtn.disabled = hasRootNode; 
+            addChildBtn.disabled = !nodeSelected;
+            editNodeBtn.disabled = !nodeSelected;
+            deleteNodeBtn.disabled = !nodeSelected;
+            addEditNoteBtn.disabled = !nodeSelected; // Atualizar estado do novo botão
+        }
+        
+        renderMindMap(); // Renderização Inicial
+    </script>
+</body>
+</html>
+```
+
+**Resumo das Alterações:**
+
+1.  **HTML (`controlsMenu`):**
+    * Adicionado um novo botão:
+        ```html
+        <div>
+            <button id="addEditNoteBtn" class="control-button" disabled>Adicionar/Editar Nota</button>
+        </div>
+        ```
+        Este botão foi colocado logo após o botão "Eliminar Nó".
+
+2.  **JavaScript:**
+    * **Referência ao Novo Botão:**
+        ```javascript
+        const addEditNoteBtn = document.getElementById('addEditNoteBtn'); 
+        ```
+    * **Event Listener para o Novo Botão:**
+        ```javascript
+        addEditNoteBtn.addEventListener('click', () => {
+            if (selectedNodeId !== null) {
+                openNotesPanel(selectedNodeId);
+            } else {
+                showMessage('Por favor, selecione um nó primeiro para adicionar ou editar uma nota.', 'error');
+            }
+        });
+        ```
+        Este listener verifica se um nó está selecionado e, em caso afirmativo, chama `openNotesPanel()` para esse nó.
+    * **Atualização de `updateButtonStates()`:**
+        A linha `addEditNoteBtn.disabled = !nodeSelected;` foi adicionada para ativar/desativar o novo botão com base na seleção de um nó.
+    * **Consistência no `handleNodeClick` e `handleNodeMouseDown`**:
+        * Adicionei um `eventListener` de `click` ao grupo do nó em `renderMindMap` para garantir que um clique (não apenas `mousedown`) seleciona o nó.
+        * No `handleNodeClick`, adicionei uma verificação para ignorar cliques no ícone de nota, já que eles têm sua própria lógica.
+        * A seleção de nó no `handleNodeMouseDown` foi comentada para centralizar a lógica de seleção no `handleNodeClick`, mas pode ser reativada se uma resposta visual mais rápida no `mousedown` for preferida.
+
+Agora, quando um nó estiver selecionado, o botão "Adicionar/Editar Nota" no menu de comandos ficará ativo. Clicar nele abrirá o painel de notas para o nó selecionado, permitindo que adiciones ou edites as suas not
