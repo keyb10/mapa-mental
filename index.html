@@ -401,7 +401,7 @@
         /* Seta de Instrução */
         #startInstruction {
             position: fixed;
-            /* top é ajustado dinamicamente pelo JS para alinhar com o input */
+            /* top é ajustado dinamicamente pelo JS */
             left: 310px; 
             display: flex;
             align-items: center;
@@ -411,7 +411,7 @@
             padding: 8px 12px;
             border-radius: 6px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            transition: left 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            transition: left 0.3s ease-in-out, opacity 0.3s ease-in-out, top 0.1s linear; /* Adicionada transição para top */
             opacity: 0; 
         }
         #startInstruction.visible {
@@ -426,8 +426,8 @@
             height: 20px;
             margin-right: 8px;
         }
-        #startInstruction span { /* Estilo para o texto da instrução */
-            font-size: 19px; /* Aumentado em 50% de 13px (aprox) */
+        #startInstruction span { 
+            font-size: 19.5px; /* Aproximadamente 13px * 1.5 */
             font-weight: bold;
         }
 
@@ -1484,13 +1484,22 @@
                 startInstructionDiv.classList.remove('visible');
                 startInstructionDiv.classList.add('hidden');
             } else {
-                if (!controlsMenu.classList.contains('hidden')) { // Se o menu lateral ESTIVER aberto
-                    startInstructionDiv.classList.remove('hidden'); // Garante que não está 'display: none'
-                    startInstructionDiv.classList.add('visible'); // Torna visível com opacidade
-                    startInstructionDiv.style.left = (controlsMenu.offsetWidth + 30) + 'px'; 
-                } else { // Se o menu lateral ESTIVER fechado
-                    startInstructionDiv.classList.remove('visible'); // Torna invisível com opacidade
-                    // startInstructionDiv.classList.add('hidden'); // Não adicionar hidden aqui, pois a opacidade já esconde
+                if (!controlsMenu.classList.contains('hidden')) { 
+                    startInstructionDiv.classList.remove('hidden'); 
+                    startInstructionDiv.classList.add('visible'); 
+                    // Alinha a seta com o input de Tópico Principal
+                    const inputRect = nodeTextInput.getBoundingClientRect();
+                    const controlsRect = controlsMenu.getBoundingClientRect();
+                    startInstructionDiv.style.top = (controlsRect.top + nodeTextInput.offsetTop + (nodeTextInput.offsetHeight / 2) - (startInstructionDiv.offsetHeight / 2)) + 'px';
+                    startInstructionDiv.style.left = (controlsMenu.offsetLeft + controlsMenu.offsetWidth + 10) + 'px'; 
+                } else { 
+                    startInstructionDiv.classList.remove('visible'); 
+                    // Oculta com 'display: none' se o menu estiver fechado
+                    setTimeout(() => { // Atraso para permitir a transição de opacidade
+                        if(controlsMenu.classList.contains('hidden')) {
+                             startInstructionDiv.classList.add('hidden');
+                        }
+                    }, 300);
                 }
             }
 
