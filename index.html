@@ -364,8 +364,7 @@
 <body class="bg-gray-100">
     <div class="fixed-header">
         <button id="toggleMenuBtn" title="Alternar Menu"></button>
-        <span class="app-title">Mapa Mental by Leandro Tavares</span>
-    </div>
+        <span class="app-title">App Mapa Mental</span> </div>
 
 
     <div id="mindMapContainer">
@@ -1207,8 +1206,9 @@
                     const newSize = parseInt(e.target.value);
                     if (newSize >= 8 && newSize <= 72) {
                          node.fontSize = newSize;
-                         const currentFontSize = node.isRoot ? defaultNodeFontSize * rootNodeFontSizeFactor : node.fontSize;
+                         const currentFontSize = node.isRoot ? Math.round(defaultNodeFontSize * rootNodeFontSizeFactor) : node.fontSize; // Usa o fator para raiz
                          node.width = node.isRoot ? Math.max(200, node.text.length * (currentFontSize * 0.6) + 40) : Math.max(100, node.text.length * (currentFontSize * 0.5) + 30);
+                         node.height = node.isRoot ? Math.round(defaultNodeFontSize * rootNodeHeightFactor * 2.5) : Math.round(defaultNodeFontSize * 2.8);
                          renderMindMap();
                     }
                 }
@@ -1273,6 +1273,10 @@
                             if (!n.fill) n.fill = defaultNodeFill;
                             if (!n.fontFamily) n.fontFamily = defaultNodeFontFamily;
                             if (!n.fontSize) n.fontSize = defaultNodeFontSize;
+                            if (n.isRoot) { // Garante que o nó raiz tenha o tamanho de fonte correto ao carregar
+                                n.fontSize = Math.round(defaultNodeFontSize * rootNodeFontSizeFactor);
+                                n.height = Math.round(defaultNodeFontSize * rootNodeHeightFactor * 2.5);
+                            }
                             if (!n.notes) { 
                                 n.notes = { text: '', noteFontSize: '14px' }; 
                             } else if (!n.notes.noteFontSize) { 
