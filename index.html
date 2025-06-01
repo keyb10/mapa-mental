@@ -68,20 +68,28 @@
             pointer-events: none; 
         }
 
-        .control-button, .file-input-label {
+        .control-button, .file-input-label, .format-button {
             background-color: #007bff;
             color: white;
-            padding: 10px 18px; 
+            padding: 8px 12px; 
             border-radius: 6px;
             font-size: 14px;
             cursor: pointer;
             transition: background-color 0.2s;
             border: none;
-            width: 100%; 
             text-align: center;
-            display: block; 
         }
-        .control-button:hover, .file-input-label:hover {
+        .control-button, .file-input-label { 
+             width: 100%; 
+             display: block; 
+        }
+         .format-button {
+            margin-right: 5px;
+            margin-bottom: 5px; 
+            min-width: 40px; 
+        }
+
+        .control-button:hover, .file-input-label:hover, .format-button:hover {
             background-color: #0056b3;
         }
         .control-button:disabled {
@@ -201,9 +209,9 @@
             stroke: #000;
         }
 
-        #noteTextArea {
+        #noteEditableDiv { /* Alterado de #noteTextArea */
             width: 100%;
-            height: 200px; 
+            flex-grow: 1; 
             border: 1px solid #ccc;
             border-radius: 6px;
             padding: 10px;
@@ -211,6 +219,12 @@
             font-family: 'Inter', sans-serif; 
             margin-bottom: 15px;
             resize: vertical; 
+            min-height: 200px; 
+            overflow-y: auto; /* Para scroll interno se necessário */
+            -webkit-user-modify: read-write-plaintext-only; /* Para melhor compatibilidade de colagem */
+        }
+        .notes-toolbar {
+            margin-bottom: 15px;
         }
         .notes-toolbar label {
             display: block;
@@ -218,27 +232,34 @@
             font-size: 0.875rem;
             color: #555;
         }
-        .notes-toolbar input[type="text"], .notes-toolbar input[type="file"] { 
-            width: 100%;
-            padding: 8px;
+        .notes-toolbar .format-controls {
+            display: flex;
+            flex-wrap: wrap; 
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .notes-toolbar .format-controls label {
+            margin-right: 10px;
+        }
+        .notes-toolbar input[type="number"] {
+            width: 60px;
+            padding: 6px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            margin-bottom: 10px;
             font-size: 0.875rem;
-        }
-        #imagePreview {
-            max-width: 100%;
-            max-height: 150px;
-            margin-top: 5px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            object-fit: contain;
-            border: 1px solid #eee;
         }
         .notes-actions { 
             margin-top: auto; 
             padding-top: 15px; 
+            display: flex; 
+            justify-content: flex-start; 
         }
+        .notes-actions .control-button { 
+            width: auto; 
+            margin-right: 10px; 
+        }
+
+
         .node-edit-input {
             width: 100%;
             height: 100%;
@@ -260,7 +281,6 @@
             font-weight: bold;
             font-size: 16px;
         }
-        /* Menu de Contexto Personalizado */
         .custom-context-menu {
             position: absolute;
             background-color: white;
@@ -300,20 +320,8 @@
 
     <div id="controlsMenu" class="controls space-y-4 hidden"> 
         <div>
-            <input type="text" id="nodeText" class="control-input" placeholder="Texto para Nó Raiz/Filho">
+            <input type="text" id="nodeText" class="control-input" placeholder="Texto para Nó Raiz">
             <button id="addNodeBtn" class="control-button">Adicionar Nó Raiz</button>
-        </div>
-        <div> 
-            <button id="addChildBtn" class="control-button" disabled>Adicionar Filho</button>
-        </div>
-        <div>
-            <button id="editNodeBtn" class="control-button" disabled>Editar Nó</button> 
-        </div>
-        <div> 
-            <button id="deleteNodeBtn" class="control-button" disabled>Eliminar Nó</button>
-        </div>
-        <div> 
-            <button id="addEditNoteBtn" class="control-button" disabled>Adicionar/Editar Nota</button>
         </div>
         <hr class="my-3 border-gray-300"> <div>
             <button id="saveMapBtn" class="control-button bg-green-500 hover:bg-green-600">Salvar Mapa</button>
@@ -335,27 +343,25 @@
 
     <div id="notesPanel">
         <div class="notes-panel-header">
-            <h3>Editar Nota do Nó</h3>
+            <h3>Editar Nota</h3> 
             <button id="closeNotesIcon" title="Fechar Painel de Notas">
                 </button>
         </div>
-        <div class="notes-toolbar space-y-3">
-            <div>
-                <label for="noteTextArea">Texto da Nota:</label>
-                <textarea id="noteTextArea"></textarea>
+        <div class="notes-toolbar">
+            <div class="format-controls">
+                <button id="formatBoldBtn" class="format-button" title="Negrito"><b>N</b></button>
+                <button id="formatItalicBtn" class="format-button" title="Itálico"><i>I</i></button>
+                <button id="formatNumberListBtn" class="format-button" title="Lista Numerada">1.</button>
+                <button id="formatIndentBtn" class="format-button" title="Aumentar Recuo">&gt;</button>
+                <button id="formatOutdentBtn" class="format-button" title="Diminuir Recuo">&lt;</button>
+                <label for="noteFontSizeInput" class="ml-2">Tamanho:</label>
+                <input type="number" id="noteFontSizeInput" value="14" min="8" max="72" class="w-16">
             </div>
-            <div>
-                <label for="noteImageUrl">URL da Imagem:</label>
-                <input type="text" id="noteImageUrl" placeholder="Cole o URL da imagem aqui">
-                <img id="imagePreview" src="#" alt="Pré-visualização da imagem" style="display:none;">
-            </div>
-            <div>
-                <label for="noteDocumentName">Nome do Documento Anexado:</label>
-                <input type="text" id="noteDocumentName" placeholder="Ex: relatorio.pdf">
-            </div>
+            <div id="noteEditableDiv" contenteditable="true" class="border border-gray-300 rounded-md p-2.5" style="min-height: 200px; flex-grow: 1; overflow-y: auto; font-size: 14px; font-family: 'Inter', sans-serif;" placeholder="Escreva as suas notas aqui..."></div>
         </div>
         <div class="notes-actions">
-            </div>
+            <button id="exportNoteBtn" class="control-button bg-teal-500 hover:bg-teal-600">Exportar Nota (.txt)</button>
+        </div>
     </div>
 
     <div id="messageBox" class="message-box">Mensagem</div>
@@ -375,10 +381,6 @@
         const svg = document.getElementById('mindMapSvg');
         const nodeTextInput = document.getElementById('nodeText'); 
         const addNodeBtn = document.getElementById('addNodeBtn');
-        const addChildBtn = document.getElementById('addChildBtn'); 
-        const editNodeBtn = document.getElementById('editNodeBtn');   
-        const deleteNodeBtn = document.getElementById('deleteNodeBtn'); 
-        const addEditNoteBtn = document.getElementById('addEditNoteBtn'); 
         const selectedNodeDisplay = document.getElementById('selectedNodeDisplay');
         const messageBox = document.getElementById('messageBox');
         const mindMapContainer = document.getElementById('mindMapContainer');
@@ -389,11 +391,16 @@
 
         // Elementos do Painel de Notas
         const notesPanel = document.getElementById('notesPanel');
-        const noteTextArea = document.getElementById('noteTextArea');
-        const noteImageUrl = document.getElementById('noteImageUrl');
-        const imagePreview = document.getElementById('imagePreview');
-        const noteDocumentName = document.getElementById('noteDocumentName');
+        const noteEditableDiv = document.getElementById('noteEditableDiv'); // Alterado
         const closeNotesIcon = document.getElementById('closeNotesIcon'); 
+        const formatBoldBtn = document.getElementById('formatBoldBtn');
+        const formatItalicBtn = document.getElementById('formatItalicBtn');
+        const formatNumberListBtn = document.getElementById('formatNumberListBtn');
+        const formatIndentBtn = document.getElementById('formatIndentBtn');
+        const formatOutdentBtn = document.getElementById('formatOutdentBtn');
+        const noteFontSizeInput = document.getElementById('noteFontSizeInput');
+        const exportNoteBtn = document.getElementById('exportNoteBtn'); 
+
         let currentlyEditingNodeId = null; 
         let editingNodeTextId = null; 
 
@@ -432,7 +439,6 @@
         // --- Funções Auxiliares ---
         function isInputFocused() {
             const activeElement = document.activeElement;
-            // console.log('Active element for isInputFocused:', activeElement); 
             if (!activeElement) return false;
             const tagName = activeElement.tagName.toLowerCase();
             return (tagName === 'input' || tagName === 'textarea' || activeElement.isContentEditable);
@@ -445,107 +451,18 @@
             toggleMenuBtn.title = controlsMenu.classList.contains('hidden') ? "Abrir Comandos" : "Fechar Comandos";
             hideCustomContextMenu(); 
         });
-
-        addEditNoteBtn.addEventListener('click', () => {
-            if (selectedNodeId !== null) {
-                openNotesPanel(selectedNodeId);
-            } else {
-                showMessage('Por favor, selecione um nó primeiro para adicionar ou editar uma nota.', 'error');
-            }
-        });
         
-        // Listeners para os botões do menu principal
-        addNodeBtn.addEventListener('click', () => {
-            console.log('[DEBUG] Add Root Node button clicked'); 
-            const text = nodeTextInput.value.trim(); 
-            if (nodes.some(n => n.isRoot)) {
-                showMessage('Já existe um nó raiz.', 'error'); return;
-            }
-            const finalText = text === "" ? "Nó Raiz" : text;
-
-            const initialX = viewBox.x + viewBox.w / 2 - 100; 
-            const initialY = viewBox.y + viewBox.h / 2 - 30; 
-            const newNode = createNode(finalText, initialX, initialY, null, true); 
-            if (newNode) {
-                selectedNodeId = newNode.id; 
-                console.log('[DEBUG] Root node created. Selected ID:', selectedNodeId); 
-                nodeTextInput.value = ''; 
-                if (document.activeElement === nodeTextInput) { 
-                    nodeTextInput.blur(); 
-                }
-                updateLines(); 
-                renderMindMap(); 
-                showMessage(`Nó "${newNode.text}" adicionado como raiz.`);
-            }
-        });
-
-        addChildBtn.addEventListener('click', () => {
-            console.log('[DEBUG] Add Child button clicked. Selected Node ID:', selectedNodeId); 
-            if (selectedNodeId === null) {
-                showMessage('Selecione um nó pai primeiro.', 'error');
-                return;
-            }
-            const parentNode = nodes.find(n => n.id === selectedNodeId);
-            if (!parentNode) {
-                console.error('[DEBUG] Add Child: Parent node not found with ID', selectedNodeId); 
-                showMessage('Nó pai não encontrado.', 'error');
-                return;
-            }
-
-            const text = nodeTextInput.value.trim(); 
-            if (text === "") {
-                 showMessage('Por favor, introduza o texto para o nó filho no campo acima.', 'error');
-                 nodeTextInput.focus(); 
-                 return;
-            }
-            
-            const childrenCount = parentNode.childrenIds.length;
-            const angleStep = Math.PI / (childrenCount + 3); 
-            const initialAngleOffset = -Math.PI / 2; 
-            const baseDistance = (parentNode.isRoot ? 150 : 100) + childrenCount * 15; 
-            const angle = initialAngleOffset + (childrenCount * angleStep) + (Math.random() * 0.2 - 0.1) ; 
-            const childX = parentNode.x + parentNode.width / 2 - 50 + Math.cos(angle) * baseDistance;
-            const childY = parentNode.y + parentNode.height / 2 - 20 + Math.sin(angle) * baseDistance;
-
-            const newNode = createNode(text, childX, childY, selectedNodeId);
-            if (newNode) {
-                nodeTextInput.value = ''; 
-                updateLines();
-                renderMindMap();
-                showMessage(`Nó "${text}" adicionado como filho de "${parentNode.text}".`);
-            }
-        });
-
-        editNodeBtn.addEventListener('click', () => {
-            console.log('[DEBUG] Edit Node button clicked. Selected Node ID:', selectedNodeId); 
-            if (selectedNodeId === null) {
-                showMessage('Nenhum nó selecionado para editar.', 'error');
-                return;
-            }
-            const nodeToEdit = nodes.find(n => n.id === selectedNodeId);
-            if (nodeToEdit) {
-                enterNodeTextEditMode(nodeToEdit.id);
-            }
-        });
-
-        deleteNodeBtn.addEventListener('click', () => {
-            console.log('[DEBUG] Delete Node button clicked. Selected Node ID:', selectedNodeId); 
-            attemptDeleteSelectedNode(); 
-        });
-
-
         // Função para salvar dados da nota automaticamente
         function autoSaveNoteData() {
             if (currentlyEditingNodeId === null) return;
             const node = nodes.find(n => n.id === currentlyEditingNodeId);
             if (node) {
-                const oldNoteEmpty = !node.notes.text && !node.notes.imageUrl && !node.notes.documentName;
+                const oldNoteEmpty = !node.notes.htmlContent; // Verifica se o conteúdo HTML estava vazio
 
-                node.notes.text = noteTextArea.value;
-                node.notes.imageUrl = noteImageUrl.value.trim();
-                node.notes.documentName = noteDocumentName.value.trim();
+                node.notes.htmlContent = noteEditableDiv.innerHTML; // Salva o HTML
+                node.notes.fontSize = `${noteFontSizeInput.value}px`; 
                 
-                const newNoteEmpty = !node.notes.text && !node.notes.imageUrl && !node.notes.documentName;
+                const newNoteEmpty = !node.notes.htmlContent.replace(/<br\s*\/?>/gi, '').trim(); // Considera <br> como vazio
 
                 if (oldNoteEmpty !== newNoteEmpty) {
                     renderMindMap(); 
@@ -554,21 +471,61 @@
         }
 
         // Funções do Painel de Notas
-        noteTextArea.addEventListener('input', autoSaveNoteData);
-        noteImageUrl.addEventListener('input', () => {
-            if (noteImageUrl.value.trim() !== '') {
-                imagePreview.src = noteImageUrl.value;
-                imagePreview.style.display = 'block';
-            } else {
-                imagePreview.style.display = 'none';
-            }
-            autoSaveNoteData(); 
+        noteEditableDiv.addEventListener('input', autoSaveNoteData); // 'input' é mais apropriado para contenteditable
+        noteFontSizeInput.addEventListener('input', () => {
+            noteEditableDiv.style.fontSize = `${noteFontSizeInput.value}px`;
+            autoSaveNoteData();
         });
-        noteDocumentName.addEventListener('input', autoSaveNoteData);
 
-        imagePreview.onerror = () => { 
-            imagePreview.style.display = 'none'; 
-        };
+        function formatDoc(command, value = null) {
+            document.execCommand(command, false, value);
+            noteEditableDiv.focus(); // Mantém o foco no editor
+            autoSaveNoteData(); // Salva após a formatação
+        }
+
+        formatBoldBtn.addEventListener('click', () => formatDoc('bold'));
+        formatItalicBtn.addEventListener('click', () => formatDoc('italic'));
+        
+        formatNumberListBtn.addEventListener('click', () => {
+            // A implementação de listas em contenteditable pode ser complexa.
+            // document.execCommand('insertOrderedList') é uma opção, mas pode ter comportamentos variados.
+            // Para uma abordagem mais simples, podemos inserir manualmente, mas a remoção é mais difícil.
+            // Por agora, vamos usar o comando nativo.
+            formatDoc('insertOrderedList');
+        });
+
+        formatIndentBtn.addEventListener('click', () => formatDoc('indent'));
+        formatOutdentBtn.addEventListener('click', () => formatDoc('outdent'));
+
+
+        exportNoteBtn.addEventListener('click', () => {
+            if (currentlyEditingNodeId === null) {
+                showMessage('Nenhuma nota aberta para exportar.', 'error');
+                return;
+            }
+            const node = nodes.find(n => n.id === currentlyEditingNodeId);
+            if (node && node.notes.htmlContent && node.notes.htmlContent.trim() !== "") {
+                // Para exportar como texto simples, removemos as tags HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = node.notes.htmlContent;
+                const textToSave = tempDiv.textContent || tempDiv.innerText || "";
+                
+                const blob = new Blob([textToSave], {type: 'text/plain;charset=utf-8'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const nodeNameForFile = node.text.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'nota';
+                a.download = `${nodeNameForFile}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showMessage('Nota exportada com sucesso!', 'success');
+            } else {
+                showMessage('A nota está vazia, nada para exportar.', 'error');
+            }
+        });
+
 
         closeNotesIcon.addEventListener('click', closeNotesPanel); 
 
@@ -576,12 +533,9 @@
             const node = nodes.find(n => n.id === nodeId);
             if (!node) return;
             currentlyEditingNodeId = nodeId;
-            noteTextArea.value = node.notes.text;
-            noteImageUrl.value = node.notes.imageUrl;
-            noteDocumentName.value = node.notes.documentName;
-
-            imagePreview.style.display = node.notes.imageUrl ? 'block' : 'none';
-            if (node.notes.imageUrl) imagePreview.src = node.notes.imageUrl;
+            noteEditableDiv.innerHTML = node.notes.htmlContent || ''; // Carrega o HTML
+            noteFontSizeInput.value = parseInt(node.notes.fontSize) || 14;
+            noteEditableDiv.style.fontSize = node.notes.fontSize || '14px';
             notesPanel.classList.add('visible');
         }
 
@@ -592,7 +546,6 @@
 
         // --- Funções do Menu de Contexto ---
         function showCustomContextMenu(x, y, nodeId) {
-            console.log(`[DEBUG][SHOW_CONTEXT_MENU] For Node ID: ${nodeId} at (${x}, ${y})`); 
             customContextMenu.style.left = `${x}px`;
             customContextMenu.style.top = `${y}px`;
             customContextMenu.style.display = 'block';
@@ -601,7 +554,6 @@
 
         function hideCustomContextMenu() {
             if (customContextMenu.style.display === 'block') {
-                // console.log('[DEBUG][HIDE_CONTEXT_MENU] Hiding context menu.'); 
                 customContextMenu.style.display = 'none';
             }
         }
@@ -609,7 +561,6 @@
         contextAddChildBtn.addEventListener('click', () => {
             const targetNodeIdString = customContextMenu.dataset.targetNodeId;
             const targetNodeId = parseInt(targetNodeIdString);
-            console.log('[DEBUG][CONTEXT_ADD_CHILD] Target Node ID:', targetNodeId); 
             hideCustomContextMenu();
             if (isNaN(targetNodeId)) return;
 
@@ -640,7 +591,6 @@
         contextEditNodeBtn.addEventListener('click', () => {
             const targetNodeIdString = customContextMenu.dataset.targetNodeId;
             const targetNodeId = parseInt(targetNodeIdString);
-            console.log('[DEBUG][CONTEXT_EDIT_NODE] Target Node ID:', targetNodeId); 
             hideCustomContextMenu();
             if (isNaN(targetNodeId)) return;
 
@@ -653,7 +603,6 @@
         contextAddEditNoteBtn.addEventListener('click', () => { 
             const targetNodeIdString = customContextMenu.dataset.targetNodeId;
             const targetNodeId = parseInt(targetNodeIdString);
-            console.log('[DEBUG][CONTEXT_ADD_EDIT_NOTE] Target Node ID:', targetNodeId); 
             hideCustomContextMenu();
             if (isNaN(targetNodeId)) return;
 
@@ -667,7 +616,6 @@
         contextDeleteNodeBtn.addEventListener('click', () => {
             const targetNodeIdString = customContextMenu.dataset.targetNodeId;
             const targetNodeId = parseInt(targetNodeIdString);
-            console.log('[DEBUG][CONTEXT_DELETE_NODE] Target Node ID:', targetNodeId); 
             hideCustomContextMenu();
             if (isNaN(targetNodeId)) {
                 return;
@@ -711,9 +659,8 @@
                 height: nodeHeight,
                 parentId, childrenIds: [], isRoot,
                 notes: { 
-                    text: '', 
-                    imageUrl: '', 
-                    documentName: ''
+                    htmlContent: '', // Alterado de text para htmlContent
+                    fontSize: '14px' 
                 }
             };
             nodes.push(node);
@@ -854,7 +801,7 @@
                     group.appendChild(textElement);
                 }
 
-                const hasNoteContent = node.notes.text.trim() !== '' || node.notes.imageUrl.trim() !== '' || node.notes.documentName.trim() !== '';
+                const hasNoteContent = node.notes.htmlContent && node.notes.htmlContent.replace(/<br\s*\/?>/gi, '').trim() !== ''; 
                 if (hasNoteContent && node.id !== editingNodeTextId) { 
                     const iconG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                     iconG.innerHTML = noteIconSVG; 
@@ -879,14 +826,11 @@
                 });
                 group.addEventListener('contextmenu', (e) => { 
                     e.preventDefault();
-                    // console.log('[CONTEXTMENU_EVENT] Right-clicked on node ID:', node.id, 'Node text:', node.text); 
-                    // console.log('[CONTEXTMENU_EVENT] isInputFocused:', isInputFocused(), 'editingNodeTextId:', editingNodeTextId, 'notesPanelVisible:', notesPanel.classList.contains('visible')); 
                     if (isInputFocused() || editingNodeTextId !== null || notesPanel.classList.contains('visible')) { 
                         return;
                     }
                     
                     selectedNodeId = node.id; 
-                    // console.log('[CONTEXTMENU_EVENT] selectedNodeId set to:', selectedNodeId); 
                     
                     const currentSelectedNodeForDisplay = nodes.find(n => n.id === selectedNodeId);
                     if (currentSelectedNodeForDisplay) {
@@ -926,7 +870,6 @@
         }
 
         function handleNodeClick(event, nodeId) { 
-            // console.log('Node clicked. ID:', nodeId, 'Target:', event.target); 
             if (event.target.closest('.note-icon') || event.target.closest('foreignObject')) {
                 return; 
             }
@@ -1052,15 +995,12 @@
         });
 
         function attemptDeleteSelectedNode() {
-            console.log('[DEBUG] Attempting to delete node. Current selectedNodeId:', selectedNodeId); 
             if (selectedNodeId === null) {
                 showMessage('Nenhum nó selecionado para eliminar.', 'error');
                 return;
             }
             const nodeToDelete = nodes.find(n => n.id === selectedNodeId);
             if (!nodeToDelete) {
-                console.error("[DEBUG] attemptDeleteSelectedNode: Node with ID", selectedNodeId, "not found in nodes array:", nodes); 
-                showMessage('Erro: Nó a ser eliminado não encontrado.', 'error');
                 return;
             }
 
@@ -1094,12 +1034,32 @@
         }
 
         window.addEventListener('keydown', (e) => {
-            // console.log('[DEBUG] Keydown event:', e.key, 'selectedNodeId:', selectedNodeId, 'isInputFocused:', isInputFocused(), 'editingNodeTextId:', editingNodeTextId, 'notesPanelVisible:', notesPanel.classList.contains('visible'), 'contextMenuVisible:', customContextMenu.style.display); 
             if (e.key === 'Delete') {
                 if (selectedNodeId !== null && !isInputFocused() && editingNodeTextId === null && !notesPanel.classList.contains('visible') && customContextMenu.style.display === 'none') {
-                    // console.log('[DEBUG] Attempting delete via Delete key for node ID:', selectedNodeId); 
                     attemptDeleteSelectedNode();
                 }
+            }
+        });
+        
+        addNodeBtn.addEventListener('click', () => {
+            const text = nodeTextInput.value.trim(); 
+            if (nodes.some(n => n.isRoot)) {
+                showMessage('Já existe um nó raiz.', 'error'); return;
+            }
+            const finalText = text === "" ? "Nó Raiz" : text;
+
+            const initialX = viewBox.x + viewBox.w / 2 - 100; 
+            const initialY = viewBox.y + viewBox.h / 2 - 30; 
+            const newNode = createNode(finalText, initialX, initialY, null, true); 
+            if (newNode) {
+                selectedNodeId = newNode.id; 
+                nodeTextInput.value = ''; 
+                if (document.activeElement === nodeTextInput) { 
+                    nodeTextInput.blur(); 
+                }
+                updateLines(); 
+                renderMindMap(); 
+                showMessage(`Nó "${newNode.text}" adicionado como raiz.`);
             }
         });
         
@@ -1155,7 +1115,14 @@
                         nodes.forEach(n => {
                             if (!n.childrenIds) n.childrenIds = [];
                             if (!n.notes) { 
-                                n.notes = { text: '', imageUrl: '', documentName: '' }; 
+                                n.notes = { htmlContent: '', fontSize: '14px' }; // Ajustado para htmlContent
+                            } else if (!n.notes.fontSize) { 
+                                n.notes.fontSize = '14px';
+                            }
+                            // Garante que htmlContent existe se a nota existir
+                            if (n.notes && typeof n.notes.htmlContent === 'undefined') {
+                                n.notes.htmlContent = n.notes.text || ''; // Migra de 'text' se existir
+                                delete n.notes.text; // Remove a propriedade antiga 'text'
                             }
                         });
 
@@ -1183,13 +1150,7 @@
 
         function updateButtonStates() {
             const hasRootNode = nodes.some(n => n.isRoot);
-            const nodeSelected = selectedNodeId !== null; 
-
             addNodeBtn.disabled = hasRootNode; 
-            addChildBtn.disabled = !nodeSelected; 
-            editNodeBtn.disabled = !nodeSelected;   
-            deleteNodeBtn.disabled = !nodeSelected; 
-            addEditNoteBtn.disabled = !nodeSelected; 
             saveMapBtn.disabled = nodes.length === 0; 
         }
         
