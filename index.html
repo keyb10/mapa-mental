@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa Mental Interativo com Notas</title>
+    <title>Mapa Mental Interativo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -13,13 +13,14 @@
         }
         .node {
             cursor: grab;
-            fill: #f0f0f0; 
+            /* fill é definido dinamicamente */
             stroke: #333; 
             stroke-width: 1.5px;
             border-radius: 8px; 
         }
         .node-text {
-            font-size: 14px;
+            /* font-size é definido dinamicamente */
+            /* font-family é definido dinamicamente */
             fill: #333; 
             text-anchor: middle; 
             dominant-baseline: middle; 
@@ -28,7 +29,7 @@
         }
         .node-text-root { 
             font-weight: bold;
-            font-size: 16px; 
+            /* font-size é definido dinamicamente para o nó raiz */
         }
         .node.selected {
             stroke: #007bff; 
@@ -52,7 +53,7 @@
         /* Painel de Comandos */
         .controls {
             position: fixed;
-            top: 20px; 
+            top: 70px; /* Ajustado para dar espaço ao título fixo */
             left: 20px;
             background-color: rgba(255, 255, 255, 0.95); 
             padding: 20px; 
@@ -60,7 +61,7 @@
             box-shadow: 0 6px 16px rgba(0,0,0,0.2); 
             z-index: 1000;
             transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-            margin-top: 50px; 
+            width: 280px; 
         }
         .controls.hidden { 
             transform: translateX(-110%); 
@@ -68,7 +69,7 @@
             pointer-events: none; 
         }
 
-        .control-button, .file-input-label, .format-button {
+        .control-button, .file-input-label, .format-button, .color-option {
             background-color: #007bff;
             color: white;
             padding: 8px 12px; 
@@ -83,14 +84,22 @@
              width: 100%; 
              display: block; 
         }
-         .format-button {
+         .format-button, .color-option {
             margin-right: 5px;
             margin-bottom: 5px; 
-            min-width: 40px; 
+            min-width: 30px; 
+            height: 30px; 
+            display: inline-flex; 
+            align-items: center;
+            justify-content: center;
+        }
+        .color-option {
+            border: 1px solid #ccc; 
         }
 
-        .control-button:hover, .file-input-label:hover, .format-button:hover {
+        .control-button:hover, .file-input-label:hover, .format-button:hover, .color-option:hover {
             background-color: #0056b3;
+            opacity: 0.8;
         }
         .control-button:disabled {
             background-color: #cccccc;
@@ -101,9 +110,47 @@
             border: 1px solid #ccc;
             border-radius: 6px;
             font-size: 14px;
-            margin-bottom: 10px; 
-            width: 100%; 
+            flex-grow: 1; 
         }
+        .add-root-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px; 
+        }
+        #addNodeBtnIcon { 
+            background-color: #28a745; 
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin-left: 10px;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0; 
+        }
+        #addNodeBtnIcon:hover {
+            background-color: #218838;
+        }
+        #addNodeBtnIcon svg {
+            width: 20px;
+            height: 20px;
+        }
+        .menu-section label {
+            display: block;
+            text-sm font-medium text-gray-700 mb-1;
+        }
+        .menu-section select, .menu-section input[type="number"] {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+
         .message-box {
             position: fixed;
             top: 20px;
@@ -131,11 +178,15 @@
             height: 100%;
             display: block;
         }
-        #toggleMenuBtn {
+        .fixed-header { 
             position: fixed;
             top: 20px;
             left: 20px;
             z-index: 1005; 
+            display: flex;
+            align-items: center;
+        }
+        #toggleMenuBtn {
             background-color: #007bff; 
             color: white; 
             border: none;
@@ -148,6 +199,7 @@
             justify-content: center;
             width: 40px; 
             height: 40px; 
+            margin-right: 10px; 
         }
         #toggleMenuBtn:hover {
             background-color: #0056b3;
@@ -156,6 +208,12 @@
             width: 24px; 
             height: 24px;
         }
+        .app-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #333;
+        }
+
 
         /* Painel de Notas */
         #notesPanel {
@@ -209,30 +267,22 @@
             stroke: #000;
         }
 
-        #noteEditableDiv { /* Alterado de #noteTextArea */
+        #noteTextArea { 
             width: 100%;
             flex-grow: 1; 
             border: 1px solid #ccc;
             border-radius: 6px;
             padding: 10px;
-            font-size: 14px; 
+            /* font-size é definido via JS */
             font-family: 'Inter', sans-serif; 
             margin-bottom: 15px;
             resize: vertical; 
-            min-height: 200px; 
-            overflow-y: auto; /* Para scroll interno se necessário */
-            -webkit-user-modify: read-write-plaintext-only; /* Para melhor compatibilidade de colagem */
+            min-height: 300px; 
         }
         .notes-toolbar {
             margin-bottom: 15px;
         }
-        .notes-toolbar label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.875rem;
-            color: #555;
-        }
-        .notes-toolbar .format-controls {
+        .notes-toolbar .format-controls { 
             display: flex;
             flex-wrap: wrap; 
             align-items: center;
@@ -240,9 +290,11 @@
         }
         .notes-toolbar .format-controls label {
             margin-right: 10px;
+            font-size: 0.875rem;
+            color: #555;
         }
-        .notes-toolbar input[type="number"] {
-            width: 60px;
+        .notes-toolbar input[type="number"] { 
+            width: 70px; 
             padding: 6px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -268,8 +320,7 @@
             margin: 0;
             background: transparent;
             text-align: center;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px; 
+            /* font-family e font-size são definidos dinamicamente */
             color: #333;
             outline: 1px solid #007bff; 
             box-sizing: border-box; 
@@ -279,7 +330,7 @@
         }
         .node-edit-input-root { 
             font-weight: bold;
-            font-size: 16px;
+            /* font-size é definido dinamicamente */
         }
         .custom-context-menu {
             position: absolute;
@@ -311,30 +362,61 @@
     </style>
 </head>
 <body class="bg-gray-100">
+    <div class="fixed-header">
+        <button id="toggleMenuBtn" title="Alternar Menu"></button>
+        <span class="app-title">Mapa Mental by Leandro Tavares</span>
+    </div>
 
-    <button id="toggleMenuBtn" title="Alternar Menu"></button>
 
     <div id="mindMapContainer">
         <svg id="mindMapSvg"></svg>
     </div>
 
-    <div id="controlsMenu" class="controls space-y-4 hidden"> 
-        <div>
-            <input type="text" id="nodeText" class="control-input" placeholder="Texto para Nó Raiz">
-            <button id="addNodeBtn" class="control-button">Adicionar Nó Raiz</button>
+    <div id="controlsMenu" class="controls space-y-3"> 
+        <div class="add-root-container">
+            <input type="text" id="nodeText" class="control-input" placeholder="Tópico Principal">
+            <button id="addNodeBtnIcon" title="Adicionar Tópico Principal">
+                </button>
         </div>
-        <hr class="my-3 border-gray-300"> <div>
-            <button id="saveMapBtn" class="control-button bg-green-500 hover:bg-green-600">Salvar Mapa</button>
+        <hr class="my-2 border-gray-300">
+        <div class="menu-section">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Cor:</label>
+            <div id="nodeFillColorPalette" class="flex space-x-1 flex-wrap">
+                </div>
+        </div>
+        <div class="menu-section">
+            <label for="nodeFontFamilySelect" class="block text-sm font-medium text-gray-700 mb-1">Fonte:</label>
+            <select id="nodeFontFamilySelect" class="control-input p-2 text-sm">
+                <option value="Inter, sans-serif">Inter</option>
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="Verdana, sans-serif">Verdana</option>
+                <option value="Times New Roman, serif">Times New Roman</option>
+                <option value="Courier New, monospace">Courier New</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="Comic Sans MS, cursive">Comic Sans MS</option>
+            </select>
+        </div>
+        <div class="menu-section">
+            <label for="nodeFontSizeInput" class="block text-sm font-medium text-gray-700 mb-1">Tamanho da Fonte:</label>
+            <input type="number" id="nodeFontSizeInput" value="14" min="8" max="72" class="control-input p-2 text-sm">
+        </div>
+
+        <hr class="my-2 border-gray-300"> 
+        <div>
+            <button id="saveMapBtn" class="control-button bg-green-500 hover:bg-green-600">Salvar Mapa Mental</button>
         </div>
         <div>
             <input type="file" id="openMapInput" accept=".json">
-            <label for="openMapInput" class="file-input-label bg-blue-500 hover:bg-blue-600">Abrir Mapa</label>
+            <label for="openMapInput" class="file-input-label bg-blue-500 hover:bg-blue-600">Abrir Mapa Mental</label>
         </div>
-        <hr class="my-3 border-gray-300"> <div class="text-sm text-gray-700 pt-2"> 
-            <span class="font-semibold">Nó Selecionado:</span>
-            <span id="selectedNodeDisplay" class="block mt-1 p-2 bg-gray-100 rounded">Nenhum</span> 
+        <div>
+            <button id="exportTxtBtn" class="control-button bg-orange-500 hover:bg-orange-600">Exportar Mapa (TXT)</button>
         </div>
-        <div class="text-xs text-gray-500 pt-2"> 
+        <hr class="my-2 border-gray-300"> 
+        <div class="text-sm text-gray-700 pt-1"> 
+            <span class="font-semibold">Tópico Selecionado:</span> <span id="selectedNodeDisplay" class="block mt-1 p-2 bg-gray-100 rounded">Nenhum</span> 
+        </div>
+        <div class="text-xs text-gray-500 pt-1"> 
             Clique duas vezes num nó para editar o texto. <br>
             Clique direito num nó para mais opções. <br>
             Use o scroll do rato para zoom. <br>Clique e arraste o fundo para mover.
@@ -348,16 +430,11 @@
                 </button>
         </div>
         <div class="notes-toolbar">
-            <div class="format-controls">
-                <button id="formatBoldBtn" class="format-button" title="Negrito"><b>N</b></button>
-                <button id="formatItalicBtn" class="format-button" title="Itálico"><i>I</i></button>
-                <button id="formatNumberListBtn" class="format-button" title="Lista Numerada">1.</button>
-                <button id="formatIndentBtn" class="format-button" title="Aumentar Recuo">&gt;</button>
-                <button id="formatOutdentBtn" class="format-button" title="Diminuir Recuo">&lt;</button>
-                <label for="noteFontSizeInput" class="ml-2">Tamanho:</label>
-                <input type="number" id="noteFontSizeInput" value="14" min="8" max="72" class="w-16">
+            <div class="format-controls mb-2"> 
+                <label for="notePanelFontSizeInput" class="mr-2">Tamanho da Fonte:</label>
+                <input type="number" id="notePanelFontSizeInput" value="14" min="8" max="48" class="w-20 p-1 border border-gray-300 rounded text-sm">
             </div>
-            <div id="noteEditableDiv" contenteditable="true" class="border border-gray-300 rounded-md p-2.5" style="min-height: 200px; flex-grow: 1; overflow-y: auto; font-size: 14px; font-family: 'Inter', sans-serif;" placeholder="Escreva as suas notas aqui..."></div>
+            <textarea id="noteTextArea" placeholder="Escreva as suas notas aqui..."></textarea>
         </div>
         <div class="notes-actions">
             <button id="exportNoteBtn" class="control-button bg-teal-500 hover:bg-teal-600">Exportar Nota (.txt)</button>
@@ -380,7 +457,7 @@
         // --- Elementos da UI ---
         const svg = document.getElementById('mindMapSvg');
         const nodeTextInput = document.getElementById('nodeText'); 
-        const addNodeBtn = document.getElementById('addNodeBtn');
+        const addNodeBtnIcon = document.getElementById('addNodeBtnIcon'); 
         const selectedNodeDisplay = document.getElementById('selectedNodeDisplay');
         const messageBox = document.getElementById('messageBox');
         const mindMapContainer = document.getElementById('mindMapContainer');
@@ -388,17 +465,17 @@
         const controlsMenu = document.getElementById('controlsMenu');
         const saveMapBtn = document.getElementById('saveMapBtn'); 
         const openMapInput = document.getElementById('openMapInput'); 
+        const exportTxtBtn = document.getElementById('exportTxtBtn');
+        const nodeFillColorPalette = document.getElementById('nodeFillColorPalette');
+        const nodeFontFamilySelect = document.getElementById('nodeFontFamilySelect');
+        const nodeFontSizeInput = document.getElementById('nodeFontSizeInput');
+
 
         // Elementos do Painel de Notas
         const notesPanel = document.getElementById('notesPanel');
-        const noteEditableDiv = document.getElementById('noteEditableDiv'); // Alterado
+        const noteTextArea = document.getElementById('noteTextArea'); 
         const closeNotesIcon = document.getElementById('closeNotesIcon'); 
-        const formatBoldBtn = document.getElementById('formatBoldBtn');
-        const formatItalicBtn = document.getElementById('formatItalicBtn');
-        const formatNumberListBtn = document.getElementById('formatNumberListBtn');
-        const formatIndentBtn = document.getElementById('formatIndentBtn');
-        const formatOutdentBtn = document.getElementById('formatOutdentBtn');
-        const noteFontSizeInput = document.getElementById('noteFontSizeInput');
+        const notePanelFontSizeInput = document.getElementById('notePanelFontSizeInput'); 
         const exportNoteBtn = document.getElementById('exportNoteBtn'); 
 
         let currentlyEditingNodeId = null; 
@@ -417,6 +494,7 @@
         const closeIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
         const noteIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="note-indicator-icon"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
         const panelCloseIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        const checkIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
 
         // --- Estado do Mapa Mental ---
@@ -430,11 +508,46 @@
         let viewBox = { x: 0, y: 0, w: mindMapContainer.clientWidth, h: mindMapContainer.clientHeight };
         let isPanning = false;
         let lastPanPoint = { x: 0, y: 0 };
+        const defaultNodeFill = '#f0f0f0';
+        const defaultNodeFontFamily = 'Inter, sans-serif';
+        const defaultNodeFontSize = 14; 
+        const rootNodeHeightFactor = 1.5; 
+        const rootNodeFontSizeFactor = 1.5; 
+
 
         // --- Inicialização ---
         svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
         toggleMenuBtn.innerHTML = hamburgerIconSVG; 
         closeNotesIcon.innerHTML = panelCloseIconSVG; 
+        addNodeBtnIcon.innerHTML = checkIconSVG;
+
+        // --- Cores para a Paleta ---
+        const nodeFillColors = ['#FFCDD2', '#C8E6C9', '#BBDEFB', '#FFF9C4', '#D1C4E9', '#B2DFDB', '#f0f0f0'];
+
+        function initializeColorPalette() {
+            nodeFillColorPalette.innerHTML = ''; 
+            nodeFillColors.forEach(color => {
+                const colorDiv = document.createElement('div');
+                colorDiv.classList.add('color-option');
+                colorDiv.style.backgroundColor = color;
+                colorDiv.dataset.color = color;
+                colorDiv.title = `Mudar cor para ${color}`;
+                colorDiv.addEventListener('click', () => {
+                    if (selectedNodeId !== null) {
+                        const node = nodes.find(n => n.id === selectedNodeId);
+                        if (node) {
+                            node.fill = color;
+                            renderMindMap();
+                        }
+                    } else {
+                        showMessage('Selecione um nó para mudar a cor.', 'error');
+                    }
+                });
+                nodeFillColorPalette.appendChild(colorDiv);
+            });
+        }
+        initializeColorPalette();
+
 
         // --- Funções Auxiliares ---
         function isInputFocused() {
@@ -442,6 +555,10 @@
             if (!activeElement) return false;
             const tagName = activeElement.tagName.toLowerCase();
             return (tagName === 'input' || tagName === 'textarea' || activeElement.isContentEditable);
+        }
+
+        function sanitizeFilename(name) {
+            return name.replace(/[^a-z0-9_\-\.]/gi, '_').replace(/\s+/g, '_').substring(0, 50);
         }
 
         // --- Event Listeners ---
@@ -452,17 +569,39 @@
             hideCustomContextMenu(); 
         });
         
+        addNodeBtnIcon.addEventListener('click', () => {
+            const text = nodeTextInput.value.trim(); 
+            if (nodes.some(n => n.isRoot)) {
+                showMessage('Já existe um nó raiz.', 'error'); return;
+            }
+            const finalText = text === "" ? "Tópico Principal" : text; 
+
+            const initialX = viewBox.x + viewBox.w / 2 - 100; 
+            const initialY = viewBox.y + viewBox.h / 2 - 30; 
+            const newNode = createNode(finalText, initialX, initialY, null, true); 
+            if (newNode) {
+                selectedNodeId = newNode.id; 
+                nodeTextInput.value = ''; 
+                if (document.activeElement === nodeTextInput) { 
+                    nodeTextInput.blur(); 
+                }
+                updateLines(); 
+                renderMindMap(); 
+                showMessage(`Nó "${newNode.text}" adicionado como raiz.`);
+            }
+        });
+        
         // Função para salvar dados da nota automaticamente
         function autoSaveNoteData() {
             if (currentlyEditingNodeId === null) return;
             const node = nodes.find(n => n.id === currentlyEditingNodeId);
             if (node) {
-                const oldNoteEmpty = !node.notes.htmlContent; // Verifica se o conteúdo HTML estava vazio
+                const oldNoteEmpty = !node.notes.text; 
 
-                node.notes.htmlContent = noteEditableDiv.innerHTML; // Salva o HTML
-                node.notes.fontSize = `${noteFontSizeInput.value}px`; 
+                node.notes.text = noteTextArea.value; 
+                node.notes.noteFontSize = `${notePanelFontSizeInput.value}px`; 
                 
-                const newNoteEmpty = !node.notes.htmlContent.replace(/<br\s*\/?>/gi, '').trim(); // Considera <br> como vazio
+                const newNoteEmpty = !node.notes.text.trim();
 
                 if (oldNoteEmpty !== newNoteEmpty) {
                     renderMindMap(); 
@@ -471,31 +610,11 @@
         }
 
         // Funções do Painel de Notas
-        noteEditableDiv.addEventListener('input', autoSaveNoteData); // 'input' é mais apropriado para contenteditable
-        noteFontSizeInput.addEventListener('input', () => {
-            noteEditableDiv.style.fontSize = `${noteFontSizeInput.value}px`;
+        noteTextArea.addEventListener('input', autoSaveNoteData); 
+        notePanelFontSizeInput.addEventListener('input', () => { 
+            noteTextArea.style.fontSize = `${notePanelFontSizeInput.value}px`;
             autoSaveNoteData();
         });
-
-        function formatDoc(command, value = null) {
-            document.execCommand(command, false, value);
-            noteEditableDiv.focus(); // Mantém o foco no editor
-            autoSaveNoteData(); // Salva após a formatação
-        }
-
-        formatBoldBtn.addEventListener('click', () => formatDoc('bold'));
-        formatItalicBtn.addEventListener('click', () => formatDoc('italic'));
-        
-        formatNumberListBtn.addEventListener('click', () => {
-            // A implementação de listas em contenteditable pode ser complexa.
-            // document.execCommand('insertOrderedList') é uma opção, mas pode ter comportamentos variados.
-            // Para uma abordagem mais simples, podemos inserir manualmente, mas a remoção é mais difícil.
-            // Por agora, vamos usar o comando nativo.
-            formatDoc('insertOrderedList');
-        });
-
-        formatIndentBtn.addEventListener('click', () => formatDoc('indent'));
-        formatOutdentBtn.addEventListener('click', () => formatDoc('outdent'));
 
 
         exportNoteBtn.addEventListener('click', () => {
@@ -504,17 +623,14 @@
                 return;
             }
             const node = nodes.find(n => n.id === currentlyEditingNodeId);
-            if (node && node.notes.htmlContent && node.notes.htmlContent.trim() !== "") {
-                // Para exportar como texto simples, removemos as tags HTML
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = node.notes.htmlContent;
-                const textToSave = tempDiv.textContent || tempDiv.innerText || "";
+            if (node && node.notes.text && node.notes.text.trim() !== "") {
+                const textToSave = node.notes.text; 
                 
                 const blob = new Blob([textToSave], {type: 'text/plain;charset=utf-8'});
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                const nodeNameForFile = node.text.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'nota';
+                const nodeNameForFile = sanitizeFilename(node.text) || 'nota';
                 a.download = `${nodeNameForFile}.txt`;
                 document.body.appendChild(a);
                 a.click();
@@ -533,9 +649,9 @@
             const node = nodes.find(n => n.id === nodeId);
             if (!node) return;
             currentlyEditingNodeId = nodeId;
-            noteEditableDiv.innerHTML = node.notes.htmlContent || ''; // Carrega o HTML
-            noteFontSizeInput.value = parseInt(node.notes.fontSize) || 14;
-            noteEditableDiv.style.fontSize = node.notes.fontSize || '14px';
+            noteTextArea.value = node.notes.text || ''; 
+            notePanelFontSizeInput.value = parseInt(node.notes.noteFontSize) || 14; 
+            noteTextArea.style.fontSize = node.notes.noteFontSize || '14px'; 
             notesPanel.classList.add('visible');
         }
 
@@ -647,20 +763,29 @@
                  showMessage('O texto do nó não pode estar vazio.', 'error');
                  return null;
             }
-            const finalText = (isRoot && nodeText === "") ? "Nó Raiz" : nodeText; 
+            const finalText = (isRoot && nodeText === "") ? "Tópico Principal" : nodeText; 
 
             const id = nextNodeId++;
-            const nodeWidth = isRoot ? Math.max(200, finalText.length * 10 + 40) : Math.max(100, finalText.length * 8 + 30);
-            const nodeHeight = isRoot ? 60 : 40; 
+            let currentFontSize = defaultNodeFontSize;
+            if (isRoot) {
+                currentFontSize = Math.round(defaultNodeFontSize * rootNodeFontSizeFactor);
+            }
+
+            const nodeWidth = isRoot ? Math.max(200, finalText.length * (currentFontSize * 0.6) + 40) : Math.max(100, finalText.length * (currentFontSize * 0.5) + 30);
+            const nodeHeight = isRoot ? Math.round(defaultNodeFontSize * rootNodeHeightFactor * 2.5) : Math.round(defaultNodeFontSize * 2.8); 
+
 
             const node = {
                 id, text: finalText, x, y,
                 width: nodeWidth, 
                 height: nodeHeight,
                 parentId, childrenIds: [], isRoot,
+                fill: defaultNodeFill, 
+                fontFamily: defaultNodeFontFamily,
+                fontSize: currentFontSize,
                 notes: { 
-                    htmlContent: '', // Alterado de text para htmlContent
-                    fontSize: '14px' 
+                    text: '',
+                    noteFontSize: '14px' 
                 }
             };
             nodes.push(node);
@@ -680,8 +805,9 @@
                  if(currentlyEditingNode) {
                     const inputElement = document.getElementById(`node-edit-input-${editingNodeTextId}`);
                     if (inputElement) { 
-                         currentlyEditingNode.text = inputElement.value.trim() || (currentlyEditingNode.isRoot ? "Nó Raiz" : "Nó"); 
-                         currentlyEditingNode.width = currentlyEditingNode.isRoot ? Math.max(200, currentlyEditingNode.text.length * 10 + 40) : Math.max(100, currentlyEditingNode.text.length * 8 + 30);
+                         currentlyEditingNode.text = inputElement.value.trim() || (currentlyEditingNode.isRoot ? "Tópico Principal" : "Nó"); 
+                         const currentFontSize = currentlyEditingNode.isRoot ? defaultNodeFontSize * rootNodeFontSizeFactor : currentlyEditingNode.fontSize;
+                         currentlyEditingNode.width = currentlyEditingNode.isRoot ? Math.max(200, currentlyEditingNode.text.length * (currentFontSize * 0.6) + 40) : Math.max(100, currentlyEditingNode.text.length * (currentFontSize * 0.5) + 30);
                     }
                  }
             }
@@ -705,7 +831,8 @@
                         return; 
                     }
                     node.text = newText;
-                    node.width = node.isRoot ? Math.max(200, node.text.length * 10 + 40) : Math.max(100, node.text.length * 8 + 30);
+                    const currentFontSize = node.isRoot ? defaultNodeFontSize * rootNodeFontSizeFactor : node.fontSize;
+                    node.width = node.isRoot ? Math.max(200, node.text.length * (currentFontSize * 0.6) + 40) : Math.max(100, node.text.length * (currentFontSize * 0.5) + 30);
                     if (selectedNodeId === node.id) { 
                         selectedNodeDisplay.textContent = node.text;
                     }
@@ -737,6 +864,7 @@
                 rect.setAttribute('height', node.height);
                 rect.setAttribute('rx', 8); rect.setAttribute('ry', 8);
                 rect.classList.add('node');
+                rect.style.fill = node.fill || defaultNodeFill; 
                 if (node.id === selectedNodeId && node.id !== editingNodeTextId) { 
                      rect.classList.add('selected');
                 }
@@ -762,8 +890,11 @@
                     input.setAttribute('value', node.text);
                     input.setAttribute('id', `node-edit-input-${node.id}`);
                     input.classList.add('node-edit-input'); 
+                    input.style.fontFamily = node.fontFamily || defaultNodeFontFamily;
+                    input.style.fontSize = `${node.fontSize || defaultNodeFontSize}px`;
                     if(node.isRoot) { 
                         input.classList.add('node-edit-input-root');
+                        input.style.fontSize = `${Math.round(defaultNodeFontSize * rootNodeFontSizeFactor)}px`;
                     }
                     input.style.width = '90%'; 
                     input.style.height = 'calc(100% - 4px)'; 
@@ -795,13 +926,16 @@
                     textElement.setAttribute('y', node.height / 2);
                     textElement.textContent = node.text;
                     textElement.classList.add('node-text');
+                    textElement.style.fontFamily = node.fontFamily || defaultNodeFontFamily;
+                    textElement.style.fontSize = `${node.fontSize || defaultNodeFontSize}px`;
                     if(node.isRoot) { 
                         textElement.classList.add('node-text-root');
+                        textElement.style.fontSize = `${Math.round(defaultNodeFontSize * rootNodeFontSizeFactor)}px`;
                     }
                     group.appendChild(textElement);
                 }
 
-                const hasNoteContent = node.notes.htmlContent && node.notes.htmlContent.replace(/<br\s*\/?>/gi, '').trim() !== ''; 
+                const hasNoteContent = node.notes.text && node.notes.text.trim() !== ''; 
                 if (hasNoteContent && node.id !== editingNodeTextId) { 
                     const iconG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                     iconG.innerHTML = noteIconSVG; 
@@ -835,6 +969,8 @@
                     const currentSelectedNodeForDisplay = nodes.find(n => n.id === selectedNodeId);
                     if (currentSelectedNodeForDisplay) {
                         selectedNodeDisplay.textContent = currentSelectedNodeForDisplay.text;
+                        nodeFontFamilySelect.value = currentSelectedNodeForDisplay.fontFamily || defaultNodeFontFamily;
+                        nodeFontSizeInput.value = currentSelectedNodeForDisplay.fontSize || defaultNodeFontSize;
                     }
                     
                     document.querySelectorAll('.node.selected').forEach(el => el.classList.remove('selected'));
@@ -878,7 +1014,15 @@
             event.stopPropagation(); 
             selectedNodeId = nodeId;
             const selectedNode = nodes.find(n => n.id === selectedNodeId);
-            selectedNodeDisplay.textContent = selectedNode ? selectedNode.text : 'Nenhum';
+            if (selectedNode) {
+                selectedNodeDisplay.textContent = selectedNode.text;
+                nodeFontFamilySelect.value = selectedNode.fontFamily || defaultNodeFontFamily;
+                nodeFontSizeInput.value = selectedNode.fontSize || defaultNodeFontSize;
+            } else {
+                selectedNodeDisplay.textContent = 'Nenhum';
+                nodeFontFamilySelect.value = defaultNodeFontFamily;
+                nodeFontSizeInput.value = defaultNodeFontSize;
+            }
             renderMindMap(); 
             hideCustomContextMenu(); 
         }
@@ -953,6 +1097,8 @@
                 if (selectedNodeId !== null && !isDraggingNode && editingNodeTextId === null) { 
                     selectedNodeId = null;
                     selectedNodeDisplay.textContent = 'Nenhum';
+                    nodeFontFamilySelect.value = defaultNodeFontFamily; // Reset font controls
+                    nodeFontSizeInput.value = defaultNodeFontSize;
                     renderMindMap();
                 }
                 hideCustomContextMenu(); 
@@ -1029,6 +1175,8 @@
             if (editingNodeTextId === selectedNodeId) editingNodeTextId = null; 
             selectedNodeId = null; 
             selectedNodeDisplay.textContent = 'Nenhum';
+            nodeFontFamilySelect.value = defaultNodeFontFamily; // Reset font controls
+            nodeFontSizeInput.value = defaultNodeFontSize;
             updateLines(); renderMindMap();
             showMessage(`Nó "${oldSelectedText}" e descendentes eliminados.`);
         }
@@ -1041,34 +1189,42 @@
             }
         });
         
-        addNodeBtn.addEventListener('click', () => {
-            const text = nodeTextInput.value.trim(); 
-            if (nodes.some(n => n.isRoot)) {
-                showMessage('Já existe um nó raiz.', 'error'); return;
-            }
-            const finalText = text === "" ? "Nó Raiz" : text;
-
-            const initialX = viewBox.x + viewBox.w / 2 - 100; 
-            const initialY = viewBox.y + viewBox.h / 2 - 30; 
-            const newNode = createNode(finalText, initialX, initialY, null, true); 
-            if (newNode) {
-                selectedNodeId = newNode.id; 
-                nodeTextInput.value = ''; 
-                if (document.activeElement === nodeTextInput) { 
-                    nodeTextInput.blur(); 
+        // Listeners para os controlos de fonte do nó
+        nodeFontFamilySelect.addEventListener('change', (e) => {
+            if (selectedNodeId !== null) {
+                const node = nodes.find(n => n.id === selectedNodeId);
+                if (node) {
+                    node.fontFamily = e.target.value;
+                    renderMindMap();
                 }
-                updateLines(); 
-                renderMindMap(); 
-                showMessage(`Nó "${newNode.text}" adicionado como raiz.`);
             }
         });
-        
+
+        nodeFontSizeInput.addEventListener('input', (e) => {
+            if (selectedNodeId !== null) {
+                const node = nodes.find(n => n.id === selectedNodeId);
+                if (node) {
+                    const newSize = parseInt(e.target.value);
+                    if (newSize >= 8 && newSize <= 72) {
+                         node.fontSize = newSize;
+                         const currentFontSize = node.isRoot ? defaultNodeFontSize * rootNodeFontSizeFactor : node.fontSize;
+                         node.width = node.isRoot ? Math.max(200, node.text.length * (currentFontSize * 0.6) + 40) : Math.max(100, node.text.length * (currentFontSize * 0.5) + 30);
+                         renderMindMap();
+                    }
+                }
+            }
+        });
+
+
         // Funções de Salvar e Abrir Mapa
         saveMapBtn.addEventListener('click', () => {
             if (nodes.length === 0) {
                 showMessage('Não há nada para salvar. Adicione alguns nós primeiro.', 'error');
                 return;
             }
+            const rootNode = nodes.find(n => n.isRoot);
+            const fileNameBase = rootNode ? sanitizeFilename(rootNode.text) : 'mapa-mental';
+
             const mapData = {
                 nodes: nodes,
                 viewBox: viewBox,
@@ -1079,7 +1235,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'mapa-mental.json';
+            a.download = `${fileNameBase}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1112,17 +1268,15 @@
                         viewBox = mapData.viewBox;
                         nextNodeId = mapData.nextNodeId;
 
-                        nodes.forEach(n => {
+                        nodes.forEach(n => { 
                             if (!n.childrenIds) n.childrenIds = [];
+                            if (!n.fill) n.fill = defaultNodeFill;
+                            if (!n.fontFamily) n.fontFamily = defaultNodeFontFamily;
+                            if (!n.fontSize) n.fontSize = defaultNodeFontSize;
                             if (!n.notes) { 
-                                n.notes = { htmlContent: '', fontSize: '14px' }; // Ajustado para htmlContent
-                            } else if (!n.notes.fontSize) { 
-                                n.notes.fontSize = '14px';
-                            }
-                            // Garante que htmlContent existe se a nota existir
-                            if (n.notes && typeof n.notes.htmlContent === 'undefined') {
-                                n.notes.htmlContent = n.notes.text || ''; // Migra de 'text' se existir
-                                delete n.notes.text; // Remove a propriedade antiga 'text'
+                                n.notes = { text: '', noteFontSize: '14px' }; 
+                            } else if (!n.notes.noteFontSize) { 
+                                n.notes.noteFontSize = '14px';
                             }
                         });
 
@@ -1147,11 +1301,81 @@
             reader.readAsText(file);
         });
 
+        exportTxtBtn.addEventListener('click', () => {
+            if (nodes.length === 0) {
+                showMessage('Não há nada para exportar.', 'error');
+                return;
+            }
+
+            let output = "Mapa Mental Exportado:\n\n";
+            const rootNode = nodes.find(n => n.isRoot);
+            const fileNameBase = rootNode ? sanitizeFilename(rootNode.text) : 'mapa-mental';
+
+
+            function getNodeTextForExport(nodeId, indentLevel, prefix) {
+                const node = nodes.find(n => n.id === nodeId);
+                if (!node) return "";
+
+                let nodeOutput = "";
+                const indent = "  ".repeat(indentLevel); 
+
+                nodeOutput += `${indent}${prefix} ${node.text}\n`; 
+
+                if (node.notes && node.notes.text && node.notes.text.trim() !== "") {
+                    nodeOutput += `\n${indent}  Nota:\n`; 
+                    const noteLines = node.notes.text.split('\n');
+                    noteLines.forEach(line => {
+                        nodeOutput += `${indent}    ${line}\n`; 
+                    });
+                }
+                nodeOutput += `\n`; 
+                
+                if (node.childrenIds && node.childrenIds.length > 0) {
+                    node.childrenIds.forEach((childId, index) => {
+                        nodeOutput += getNodeTextForExport(childId, indentLevel + 1, `${prefix}${index + 1}.`);
+                    });
+                }
+                return nodeOutput;
+            }
+
+            if (rootNode) {
+                output += getNodeTextForExport(rootNode.id, 0, "1.");
+            } else { 
+                let count = 1;
+                nodes.forEach(node => { 
+                     if (node.parentId === null) { 
+                        output += getNodeTextForExport(node.id, 0, `${count}.`);
+                        count++;
+                    }
+                });
+            }
+            
+            const blob = new Blob([output], {type: 'text/plain;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileNameBase}-mapa.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessage('Mapa exportado como TXT!', 'success');
+        });
+
 
         function updateButtonStates() {
             const hasRootNode = nodes.some(n => n.isRoot);
-            addNodeBtn.disabled = hasRootNode; 
+            addNodeBtnIcon.disabled = hasRootNode; 
             saveMapBtn.disabled = nodes.length === 0; 
+            exportTxtBtn.disabled = nodes.length === 0;
+
+            const nodeSelected = selectedNodeId !== null;
+            nodeFontFamilySelect.disabled = !nodeSelected;
+            nodeFontSizeInput.disabled = !nodeSelected;
+            nodeFillColorPalette.querySelectorAll('.color-option').forEach(opt => {
+                opt.style.opacity = nodeSelected ? '1' : '0.5';
+                opt.style.cursor = nodeSelected ? 'pointer' : 'not-allowed';
+            });
         }
         
         renderMindMap(); 
