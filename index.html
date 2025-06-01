@@ -26,6 +26,10 @@
             pointer-events: none; 
             user-select: none; 
         }
+        .node-text-root { 
+            font-weight: bold;
+            font-size: 16px; 
+        }
         .node.selected {
             stroke: #007bff; 
             stroke-width: 3px;
@@ -64,7 +68,7 @@
             pointer-events: none; 
         }
 
-        .control-button {
+        .control-button, .file-input-label {
             background-color: #007bff;
             color: white;
             padding: 10px 18px; 
@@ -75,8 +79,9 @@
             border: none;
             width: 100%; 
             text-align: center;
+            display: block; 
         }
-        .control-button:hover {
+        .control-button:hover, .file-input-label:hover {
             background-color: #0056b3;
         }
         .control-button:disabled {
@@ -147,16 +152,16 @@
         /* Painel de Notas */
         #notesPanel {
             position: fixed;
-            left: 0;
+            right: 0; 
             top: 0;
-            width: 35%; /* Largura do painel de notas */
-            max-width: 500px; /* Largura máxima */
-            min-width: 300px; /* Largura mínima */
+            width: 35%; 
+            max-width: 500px; 
+            min-width: 300px; 
             height: 100vh;
             background-color: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            z-index: 1010; /* Acima do menu de comandos */
-            transform: translateX(-100%);
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1); 
+            z-index: 1010; 
+            transform: translateX(100%); 
             transition: transform 0.3s ease-in-out;
             padding: 20px;
             overflow-y: auto;
@@ -164,23 +169,48 @@
             flex-direction: column;
         }
         #notesPanel.visible {
-            transform: translateX(0);
+            transform: translateX(0); 
+        }
+        .notes-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
         }
         #notesPanel h3 {
             font-size: 1.25rem;
             font-weight: 600;
-            margin-bottom: 15px;
             color: #333;
+            margin: 0; 
         }
+        #closeNotesIcon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+         #closeNotesIcon svg {
+            width: 20px;
+            height: 20px;
+            stroke: #555;
+        }
+        #closeNotesIcon:hover svg {
+            stroke: #000;
+        }
+
         #noteTextArea {
             width: 100%;
-            height: 200px; /* Altura inicial do campo de texto */
+            height: 200px; 
             border: 1px solid #ccc;
             border-radius: 6px;
             padding: 10px;
-            font-size: 14px;
+            font-size: 14px; 
+            font-family: 'Inter', sans-serif; 
             margin-bottom: 15px;
-            resize: vertical; /* Permite redimensionamento vertical */
+            resize: vertical; 
         }
         .notes-toolbar label {
             display: block;
@@ -188,7 +218,7 @@
             font-size: 0.875rem;
             color: #555;
         }
-        .notes-toolbar select, .notes-toolbar input[type="text"], .notes-toolbar input[type="number"], .notes-toolbar input[type="file"] {
+        .notes-toolbar input[type="text"], .notes-toolbar input[type="file"] { 
             width: 100%;
             padding: 8px;
             border: 1px solid #ccc;
@@ -205,8 +235,57 @@
             object-fit: contain;
             border: 1px solid #eee;
         }
-        .notes-actions button {
-            margin-right: 10px;
+        .notes-actions { 
+            margin-top: auto; 
+            padding-top: 15px; 
+        }
+        .node-edit-input {
+            width: 100%;
+            height: 100%;
+            border: none; 
+            padding: 0;
+            margin: 0;
+            background: transparent;
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px; 
+            color: #333;
+            outline: 1px solid #007bff; 
+            box-sizing: border-box; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .node-edit-input-root { 
+            font-weight: bold;
+            font-size: 16px;
+        }
+        /* Menu de Contexto Personalizado */
+        .custom-context-menu {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.15);
+            border-radius: 4px;
+            padding: 5px 0;
+            z-index: 1020; 
+            display: none; 
+        }
+        .custom-context-menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .custom-context-menu-list li {
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .custom-context-menu-list li:hover {
+            background-color: #f0f0f0;
+        }
+        #openMapInput {
+            display: none;
         }
 
     </style>
@@ -221,106 +300,116 @@
 
     <div id="controlsMenu" class="controls space-y-4 hidden"> 
         <div>
-            <input type="text" id="nodeText" class="control-input" placeholder="Texto do nó">
+            <input type="text" id="nodeText" class="control-input" placeholder="Texto para Nó Raiz/Filho">
             <button id="addNodeBtn" class="control-button">Adicionar Nó Raiz</button>
         </div>
-        <div>
+        <div> 
             <button id="addChildBtn" class="control-button" disabled>Adicionar Filho</button>
         </div>
         <div>
-            <button id="editNodeBtn" class="control-button" disabled>Editar Nó</button>
+            <button id="editNodeBtn" class="control-button" disabled>Editar Nó</button> 
         </div>
-        <div>
+        <div> 
             <button id="deleteNodeBtn" class="control-button" disabled>Eliminar Nó</button>
         </div>
-        <div> <button id="addEditNoteBtn" class="control-button" disabled>Adicionar/Editar Nota</button>
+        <div> 
+            <button id="addEditNoteBtn" class="control-button" disabled>Adicionar/Editar Nota</button>
         </div>
-        <div class="text-sm text-gray-700 pt-2"> 
+        <hr class="my-3 border-gray-300"> <div>
+            <button id="saveMapBtn" class="control-button bg-green-500 hover:bg-green-600">Salvar Mapa</button>
+        </div>
+        <div>
+            <input type="file" id="openMapInput" accept=".json">
+            <label for="openMapInput" class="file-input-label bg-blue-500 hover:bg-blue-600">Abrir Mapa</label>
+        </div>
+        <hr class="my-3 border-gray-300"> <div class="text-sm text-gray-700 pt-2"> 
             <span class="font-semibold">Nó Selecionado:</span>
             <span id="selectedNodeDisplay" class="block mt-1 p-2 bg-gray-100 rounded">Nenhum</span> 
         </div>
         <div class="text-xs text-gray-500 pt-2"> 
+            Clique duas vezes num nó para editar o texto. <br>
+            Clique direito num nó para mais opções. <br>
             Use o scroll do rato para zoom. <br>Clique e arraste o fundo para mover.
         </div>
     </div>
 
     <div id="notesPanel">
-        <h3>Editar Nota do Nó</h3>
+        <div class="notes-panel-header">
+            <h3>Editar Nota do Nó</h3>
+            <button id="closeNotesIcon" title="Fechar Painel de Notas">
+                </button>
+        </div>
         <div class="notes-toolbar space-y-3">
             <div>
                 <label for="noteTextArea">Texto da Nota:</label>
                 <textarea id="noteTextArea"></textarea>
             </div>
             <div>
-                <label for="noteFontFamily">Fonte:</label>
-                <select id="noteFontFamily">
-                    <option value="Inter, sans-serif">Inter</option>
-                    <option value="Arial, sans-serif">Arial</option>
-                    <option value="Verdana, sans-serif">Verdana</option>
-                    <option value="Times New Roman, serif">Times New Roman</option>
-                    <option value="Courier New, monospace">Courier New</option>
-                </select>
-            </div>
-            <div>
-                <label for="noteFontSize">Tamanho da Fonte (px):</label>
-                <input type="number" id="noteFontSize" value="14" min="8" max="72">
-            </div>
-            <div>
                 <label for="noteImageUrl">URL da Imagem:</label>
                 <input type="text" id="noteImageUrl" placeholder="Cole o URL da imagem aqui">
                 <img id="imagePreview" src="#" alt="Pré-visualização da imagem" style="display:none;">
-                 <!-- <label for="noteImageFile">Ou carregue uma imagem:</label>
-                <input type="file" id="noteImageFile" accept="image/*"> -->
             </div>
             <div>
                 <label for="noteDocumentName">Nome do Documento Anexado:</label>
                 <input type="text" id="noteDocumentName" placeholder="Ex: relatorio.pdf">
-                <!-- <label for="noteDocumentFile">Ou carregue um documento:</label>
-                <input type="file" id="noteDocumentFile"> -->
             </div>
         </div>
-        <div class="notes-actions mt-auto pt-4">
-            <button id="saveNoteBtn" class="control-button">Guardar Nota</button>
-            <button id="closeNotesPanelBtn" class="control-button bg-gray-500 hover:bg-gray-600">Fechar</button>
-        </div>
+        <div class="notes-actions">
+            </div>
     </div>
 
     <div id="messageBox" class="message-box">Mensagem</div>
 
+    <div id="customContextMenu" class="custom-context-menu">
+        <ul class="custom-context-menu-list">
+            <li id="contextAddChild">Adicionar Filho</li>
+            <li id="contextEditNode">Editar Nó</li>
+            <li id="contextAddEditNote">Adicionar/Editar Nota</li> 
+            <li id="contextDeleteNode">Eliminar Nó</li>
+        </ul>
+    </div>
+
+
     <script>
         // --- Elementos da UI ---
         const svg = document.getElementById('mindMapSvg');
-        const nodeTextInput = document.getElementById('nodeText');
+        const nodeTextInput = document.getElementById('nodeText'); 
         const addNodeBtn = document.getElementById('addNodeBtn');
-        const addChildBtn = document.getElementById('addChildBtn');
-        const editNodeBtn = document.getElementById('editNodeBtn');
-        const deleteNodeBtn = document.getElementById('deleteNodeBtn');
-        const addEditNoteBtn = document.getElementById('addEditNoteBtn'); // Novo botão
+        const addChildBtn = document.getElementById('addChildBtn'); 
+        const editNodeBtn = document.getElementById('editNodeBtn');   
+        const deleteNodeBtn = document.getElementById('deleteNodeBtn'); 
+        const addEditNoteBtn = document.getElementById('addEditNoteBtn'); 
         const selectedNodeDisplay = document.getElementById('selectedNodeDisplay');
         const messageBox = document.getElementById('messageBox');
         const mindMapContainer = document.getElementById('mindMapContainer');
         const toggleMenuBtn = document.getElementById('toggleMenuBtn');
         const controlsMenu = document.getElementById('controlsMenu');
+        const saveMapBtn = document.getElementById('saveMapBtn'); 
+        const openMapInput = document.getElementById('openMapInput'); 
 
         // Elementos do Painel de Notas
         const notesPanel = document.getElementById('notesPanel');
         const noteTextArea = document.getElementById('noteTextArea');
-        const noteFontFamily = document.getElementById('noteFontFamily');
-        const noteFontSize = document.getElementById('noteFontSize');
         const noteImageUrl = document.getElementById('noteImageUrl');
         const imagePreview = document.getElementById('imagePreview');
-        // const noteImageFile = document.getElementById('noteImageFile'); // Para carregamento futuro
         const noteDocumentName = document.getElementById('noteDocumentName');
-        // const noteDocumentFile = document.getElementById('noteDocumentFile'); // Para carregamento futuro
-        const saveNoteBtn = document.getElementById('saveNoteBtn');
-        const closeNotesPanelBtn = document.getElementById('closeNotesPanelBtn');
-        let currentlyEditingNodeId = null;
+        const closeNotesIcon = document.getElementById('closeNotesIcon'); 
+        let currentlyEditingNodeId = null; 
+        let editingNodeTextId = null; 
+
+        // Elementos do Menu de Contexto
+        const customContextMenu = document.getElementById('customContextMenu');
+        const contextAddChildBtn = document.getElementById('contextAddChild');
+        const contextEditNodeBtn = document.getElementById('contextEditNode'); 
+        const contextAddEditNoteBtn = document.getElementById('contextAddEditNote'); 
+        const contextDeleteNodeBtn = document.getElementById('contextDeleteNode');
 
 
         // --- Ícones SVG ---
         const hamburgerIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
         const closeIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
         const noteIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="note-indicator-icon"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+        const panelCloseIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 
 
         // --- Estado do Mapa Mental ---
@@ -338,15 +427,25 @@
         // --- Inicialização ---
         svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
         toggleMenuBtn.innerHTML = hamburgerIconSVG; 
+        closeNotesIcon.innerHTML = panelCloseIconSVG; 
+
+        // --- Funções Auxiliares ---
+        function isInputFocused() {
+            const activeElement = document.activeElement;
+            // console.log('Active element for isInputFocused:', activeElement); // DEBUG
+            if (!activeElement) return false;
+            const tagName = activeElement.tagName.toLowerCase();
+            return (tagName === 'input' || tagName === 'textarea' || activeElement.isContentEditable);
+        }
 
         // --- Event Listeners ---
         toggleMenuBtn.addEventListener('click', () => {
             controlsMenu.classList.toggle('hidden');
             toggleMenuBtn.innerHTML = controlsMenu.classList.contains('hidden') ? hamburgerIconSVG : closeIconSVG;
             toggleMenuBtn.title = controlsMenu.classList.contains('hidden') ? "Abrir Comandos" : "Fechar Comandos";
+            hideCustomContextMenu(); 
         });
 
-        // Event listener para o novo botão Adicionar/Editar Nota
         addEditNoteBtn.addEventListener('click', () => {
             if (selectedNodeId !== null) {
                 openNotesPanel(selectedNodeId);
@@ -354,64 +453,134 @@
                 showMessage('Por favor, selecione um nó primeiro para adicionar ou editar uma nota.', 'error');
             }
         });
+        
+        // Listeners para os botões do menu principal
+        addNodeBtn.addEventListener('click', () => {
+            // console.log('Add Root Node button clicked'); // DEBUG
+            const text = nodeTextInput.value.trim(); 
+            if (nodes.some(n => n.isRoot)) {
+                showMessage('Já existe um nó raiz.', 'error'); return;
+            }
+            const finalText = text === "" ? "Nó Raiz" : text;
 
+            const initialX = viewBox.x + viewBox.w / 2 - 100; 
+            const initialY = viewBox.y + viewBox.h / 2 - 30; 
+            const newNode = createNode(finalText, initialX, initialY, null, true); 
+            if (newNode) {
+                selectedNodeId = newNode.id; 
+                nodeTextInput.value = ''; 
+                if (document.activeElement === nodeTextInput) { 
+                    nodeTextInput.blur(); 
+                }
+                updateLines(); 
+                renderMindMap(); 
+                showMessage(`Nó "${newNode.text}" adicionado como raiz.`);
+            }
+        });
+
+        addChildBtn.addEventListener('click', () => {
+            // console.log('Add Child button clicked. Selected Node ID:', selectedNodeId); // DEBUG
+            if (selectedNodeId === null) {
+                showMessage('Selecione um nó pai primeiro.', 'error');
+                return;
+            }
+            const parentNode = nodes.find(n => n.id === selectedNodeId);
+            if (!parentNode) {
+                // console.error('Add Child: Parent node not found with ID', selectedNodeId); // DEBUG
+                showMessage('Nó pai não encontrado.', 'error');
+                return;
+            }
+
+            const text = nodeTextInput.value.trim(); 
+            if (text === "") {
+                 showMessage('Por favor, introduza o texto para o nó filho no campo acima.', 'error');
+                 nodeTextInput.focus(); 
+                 return;
+            }
+            
+            const childrenCount = parentNode.childrenIds.length;
+            const angleStep = Math.PI / (childrenCount + 3); 
+            const initialAngleOffset = -Math.PI / 2; 
+            const baseDistance = (parentNode.isRoot ? 150 : 100) + childrenCount * 15; 
+            const angle = initialAngleOffset + (childrenCount * angleStep) + (Math.random() * 0.2 - 0.1) ; 
+            const childX = parentNode.x + parentNode.width / 2 - 50 + Math.cos(angle) * baseDistance;
+            const childY = parentNode.y + parentNode.height / 2 - 20 + Math.sin(angle) * baseDistance;
+
+            const newNode = createNode(text, childX, childY, selectedNodeId);
+            if (newNode) {
+                nodeTextInput.value = ''; 
+                updateLines();
+                renderMindMap();
+                showMessage(`Nó "${text}" adicionado como filho de "${parentNode.text}".`);
+            }
+        });
+
+        editNodeBtn.addEventListener('click', () => {
+            // console.log('Edit Node button clicked. Selected Node ID:', selectedNodeId); // DEBUG
+            if (selectedNodeId === null) {
+                showMessage('Nenhum nó selecionado para editar.', 'error');
+                return;
+            }
+            const nodeToEdit = nodes.find(n => n.id === selectedNodeId);
+            if (nodeToEdit) {
+                enterNodeTextEditMode(nodeToEdit.id);
+            }
+        });
+
+        deleteNodeBtn.addEventListener('click', () => {
+            // console.log('Delete Node button clicked. Selected Node ID:', selectedNodeId); // DEBUG
+            attemptDeleteSelectedNode(); 
+        });
+
+
+        // Função para salvar dados da nota automaticamente
+        function autoSaveNoteData() {
+            if (currentlyEditingNodeId === null) return;
+            const node = nodes.find(n => n.id === currentlyEditingNodeId);
+            if (node) {
+                const oldNoteEmpty = !node.notes.text && !node.notes.imageUrl && !node.notes.documentName;
+
+                node.notes.text = noteTextArea.value;
+                node.notes.imageUrl = noteImageUrl.value.trim();
+                node.notes.documentName = noteDocumentName.value.trim();
+                
+                const newNoteEmpty = !node.notes.text && !node.notes.imageUrl && !node.notes.documentName;
+
+                if (oldNoteEmpty !== newNoteEmpty) {
+                    renderMindMap(); 
+                }
+            }
+        }
 
         // Funções do Painel de Notas
-        noteFontFamily.addEventListener('change', (e) => { noteTextArea.style.fontFamily = e.target.value; });
-        noteFontSize.addEventListener('input', (e) => { noteTextArea.style.fontSize = `${e.target.value}px`; });
-        noteImageUrl.addEventListener('input', (e) => {
-            if (e.target.value.trim() !== '') {
-                imagePreview.src = e.target.value;
+        noteTextArea.addEventListener('input', autoSaveNoteData);
+        noteImageUrl.addEventListener('input', () => {
+            if (noteImageUrl.value.trim() !== '') {
+                imagePreview.src = noteImageUrl.value;
                 imagePreview.style.display = 'block';
             } else {
                 imagePreview.style.display = 'none';
             }
+            autoSaveNoteData(); 
         });
-        imagePreview.onerror = () => {
-            imagePreview.style.display = 'none';
-            // showMessage('URL da imagem inválido ou imagem não encontrada.', 'error');
+        noteDocumentName.addEventListener('input', autoSaveNoteData);
+
+        imagePreview.onerror = () => { 
+            imagePreview.style.display = 'none'; 
         };
 
-
-        saveNoteBtn.addEventListener('click', () => {
-            if (currentlyEditingNodeId === null) return;
-            const node = nodes.find(n => n.id === currentlyEditingNodeId);
-            if (node) {
-                node.notes.text = noteTextArea.value;
-                node.notes.fontFamily = noteFontFamily.value;
-                node.notes.fontSize = `${noteFontSize.value}px`;
-                node.notes.imageUrl = noteImageUrl.value.trim();
-                node.notes.documentName = noteDocumentName.value.trim();
-                
-                showMessage('Nota guardada com sucesso!', 'success');
-                closeNotesPanel();
-                renderMindMap(); // Para atualizar o ícone de nota, se necessário
-            }
-        });
-
-        closeNotesPanelBtn.addEventListener('click', closeNotesPanel);
+        closeNotesIcon.addEventListener('click', closeNotesPanel); 
 
         function openNotesPanel(nodeId) {
             const node = nodes.find(n => n.id === nodeId);
             if (!node) return;
-
             currentlyEditingNodeId = nodeId;
             noteTextArea.value = node.notes.text;
-            noteFontFamily.value = node.notes.fontFamily;
-            noteFontSize.value = parseInt(node.notes.fontSize) || 14;
             noteImageUrl.value = node.notes.imageUrl;
             noteDocumentName.value = node.notes.documentName;
 
-            noteTextArea.style.fontFamily = node.notes.fontFamily;
-            noteTextArea.style.fontSize = node.notes.fontSize;
-
-            if (node.notes.imageUrl) {
-                imagePreview.src = node.notes.imageUrl;
-                imagePreview.style.display = 'block';
-            } else {
-                imagePreview.style.display = 'none';
-            }
-
+            imagePreview.style.display = node.notes.imageUrl ? 'block' : 'none';
+            if (node.notes.imageUrl) imagePreview.src = node.notes.imageUrl;
             notesPanel.classList.add('visible');
         }
 
@@ -419,6 +588,100 @@
             notesPanel.classList.remove('visible');
             currentlyEditingNodeId = null;
         }
+
+        // --- Funções do Menu de Contexto ---
+        function showCustomContextMenu(x, y, nodeId) {
+            // console.log(`[SHOW_CONTEXT_MENU] For Node ID: ${nodeId} at (${x}, ${y})`); // DEBUG
+            customContextMenu.style.left = `${x}px`;
+            customContextMenu.style.top = `${y}px`;
+            customContextMenu.style.display = 'block';
+            customContextMenu.dataset.targetNodeId = nodeId; 
+        }
+
+        function hideCustomContextMenu() {
+            if (customContextMenu.style.display === 'block') {
+                // console.log('[HIDE_CONTEXT_MENU] Hiding context menu.'); // DEBUG
+                customContextMenu.style.display = 'none';
+            }
+        }
+
+        contextAddChildBtn.addEventListener('click', () => {
+            const targetNodeIdString = customContextMenu.dataset.targetNodeId;
+            const targetNodeId = parseInt(targetNodeIdString);
+            // console.log('[CONTEXT_ADD_CHILD] Target Node ID:', targetNodeId); // DEBUG
+            hideCustomContextMenu();
+            if (isNaN(targetNodeId)) return;
+
+            const parentNode = nodes.find(n => n.id === targetNodeId);
+            if (!parentNode) {
+                showMessage('Nó pai não encontrado para adicionar filho.', 'error'); 
+                return;
+            }
+            
+            const childrenCount = parentNode.childrenIds.length;
+            const angleStep = Math.PI / (childrenCount + 3); 
+            const initialAngleOffset = -Math.PI / 2; 
+            const baseDistance = (parentNode.isRoot ? 150 : 100) + childrenCount * 15; 
+            const angle = initialAngleOffset + (childrenCount * angleStep) + (Math.random() * 0.2 - 0.1) ; 
+            const childX = parentNode.x + parentNode.width / 2 - 50 + Math.cos(angle) * baseDistance;
+            const childY = parentNode.y + parentNode.height / 2 - 20 + Math.sin(angle) * baseDistance;
+
+            const newNode = createNode("Novo Filho", childX, childY, targetNodeId); 
+            if (newNode) {
+                selectedNodeId = newNode.id; 
+                updateLines();
+                renderMindMap(); 
+                enterNodeTextEditMode(newNode.id); 
+                showMessage(`Nó filho adicionado. Edite o texto.`, 'success');
+            }
+        });
+        
+        contextEditNodeBtn.addEventListener('click', () => {
+            const targetNodeIdString = customContextMenu.dataset.targetNodeId;
+            const targetNodeId = parseInt(targetNodeIdString);
+            // console.log('[CONTEXT_EDIT_NODE] Target Node ID:', targetNodeId); // DEBUG
+            hideCustomContextMenu();
+            if (isNaN(targetNodeId)) return;
+
+            const nodeToEdit = nodes.find(n => n.id === targetNodeId);
+            if (nodeToEdit) {
+                enterNodeTextEditMode(nodeToEdit.id);
+            }
+        });
+
+        contextAddEditNoteBtn.addEventListener('click', () => { 
+            const targetNodeIdString = customContextMenu.dataset.targetNodeId;
+            const targetNodeId = parseInt(targetNodeIdString);
+            // console.log('[CONTEXT_ADD_EDIT_NOTE] Target Node ID:', targetNodeId); // DEBUG
+            hideCustomContextMenu();
+            if (isNaN(targetNodeId)) return;
+
+            const nodeForNote = nodes.find(n => n.id === targetNodeId);
+            if (nodeForNote) {
+                openNotesPanel(nodeForNote.id);
+            }
+        });
+
+
+        contextDeleteNodeBtn.addEventListener('click', () => {
+            const targetNodeIdString = customContextMenu.dataset.targetNodeId;
+            const targetNodeId = parseInt(targetNodeIdString);
+            // console.log('[CONTEXT_DELETE_NODE] Target Node ID:', targetNodeId); // DEBUG
+            hideCustomContextMenu();
+            if (isNaN(targetNodeId)) {
+                return;
+            }
+            
+            selectedNodeId = targetNodeId; 
+            attemptDeleteSelectedNode();
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (customContextMenu.style.display === 'block' && !customContextMenu.contains(e.target)) {
+                hideCustomContextMenu();
+            }
+        });
+
 
         // --- Funções do Mapa Mental ---
         function showMessage(text, type = 'success', duration = 3000) {
@@ -430,31 +693,81 @@
         }
 
         function createNode(text, x, y, parentId = null, isRoot = false) {
-            if (!text.trim()) {
-                showMessage('O texto do nó não pode estar vazio.', 'error');
-                return null;
+            const nodeText = text.trim(); 
+            if (nodeText === "" && !isRoot) { 
+                 showMessage('O texto do nó não pode estar vazio.', 'error');
+                 return null;
             }
+            const finalText = (isRoot && nodeText === "") ? "Nó Raiz" : nodeText; 
+
             const id = nextNodeId++;
+            const nodeWidth = isRoot ? Math.max(200, finalText.length * 10 + 40) : Math.max(100, finalText.length * 8 + 30);
+            const nodeHeight = isRoot ? 60 : 40; 
+
             const node = {
-                id, text, x, y,
-                width: Math.max(100, text.length * 8 + 20), 
-                height: 40,
+                id, text: finalText, x, y,
+                width: nodeWidth, 
+                height: nodeHeight,
                 parentId, childrenIds: [], isRoot,
-                notes: { // Nova estrutura para notas
-                    text: '',
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '14px',
-                    imageUrl: '',
+                notes: { 
+                    text: '', 
+                    imageUrl: '', 
                     documentName: ''
                 }
             };
             nodes.push(node);
             if (parentId !== null) {
-                const parentNode = nodes.find(n => n.id === parentId);
-                if (parentNode) parentNode.childrenIds.push(id);
+                const parentNodeFromArray = nodes.find(n => n.id === parentId);
+                if (parentNodeFromArray) {
+                     if (!parentNodeFromArray.childrenIds) parentNodeFromArray.childrenIds = []; 
+                     parentNodeFromArray.childrenIds.push(id);
+                }
             }
             return node;
         }
+        
+        function enterNodeTextEditMode(nodeId) {
+            if (editingNodeTextId !== null && editingNodeTextId !== nodeId) { 
+                 const currentlyEditingNode = nodes.find(n => n.id === editingNodeTextId);
+                 if(currentlyEditingNode) {
+                    const inputElement = document.getElementById(`node-edit-input-${editingNodeTextId}`);
+                    if (inputElement) { 
+                         currentlyEditingNode.text = inputElement.value.trim() || (currentlyEditingNode.isRoot ? "Nó Raiz" : "Nó"); 
+                         currentlyEditingNode.width = currentlyEditingNode.isRoot ? Math.max(200, currentlyEditingNode.text.length * 10 + 40) : Math.max(100, currentlyEditingNode.text.length * 8 + 30);
+                    }
+                 }
+            }
+            editingNodeTextId = nodeId;
+            renderMindMap(); 
+        }
+
+        function exitNodeTextEditMode(saveChanges) {
+            if (editingNodeTextId === null) return;
+
+            const node = nodes.find(n => n.id === editingNodeTextId);
+            const inputElement = document.getElementById(`node-edit-input-${editingNodeTextId}`);
+
+            if (node && inputElement) {
+                if (saveChanges) {
+                    const newText = inputElement.value.trim();
+                    if (newText === "") { 
+                        showMessage('O texto do nó não pode ficar vazio.', 'error');
+                        inputElement.value = node.text; 
+                        setTimeout(() => inputElement.focus(), 0); 
+                        return; 
+                    }
+                    node.text = newText;
+                    node.width = node.isRoot ? Math.max(200, node.text.length * 10 + 40) : Math.max(100, node.text.length * 8 + 30);
+                    if (selectedNodeId === node.id) { 
+                        selectedNodeDisplay.textContent = node.text;
+                    }
+                }
+            }
+            editingNodeTextId = null;
+            updateLines();
+            renderMindMap();
+        }
+
 
         function renderMindMap() {
             svg.innerHTML = ''; 
@@ -476,29 +789,80 @@
                 rect.setAttribute('height', node.height);
                 rect.setAttribute('rx', 8); rect.setAttribute('ry', 8);
                 rect.classList.add('node');
-                if (node.id === selectedNodeId) rect.classList.add('selected');
-
-                const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                textElement.setAttribute('x', node.width / 2);
-                textElement.setAttribute('y', node.height / 2);
-                textElement.textContent = node.text;
-                textElement.classList.add('node-text');
-
+                if (node.id === selectedNodeId && node.id !== editingNodeTextId) { 
+                     rect.classList.add('selected');
+                }
                 group.appendChild(rect);
-                group.appendChild(textElement);
 
-                // Adicionar ícone de nota se houver notas
+                if (node.id === editingNodeTextId) {
+                    const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+                    foreignObject.setAttribute('x', 0);
+                    foreignObject.setAttribute('y', 0);
+                    foreignObject.setAttribute('width', node.width);
+                    foreignObject.setAttribute('height', node.height);
+                    
+                    const inputBody = document.createElementNS('http://www.w3.org/1999/xhtml', 'body');
+                    inputBody.style.margin = '0'; 
+                    inputBody.style.height = '100%';
+                    inputBody.style.width = '100%';
+                    inputBody.style.display = 'flex'; 
+                    inputBody.style.alignItems = 'center';
+                    inputBody.style.justifyContent = 'center';
+
+                    const input = document.createElementNS('http://www.w3.org/1999/xhtml', 'input');
+                    input.setAttribute('type', 'text');
+                    input.setAttribute('value', node.text);
+                    input.setAttribute('id', `node-edit-input-${node.id}`);
+                    input.classList.add('node-edit-input'); 
+                    if(node.isRoot) { 
+                        input.classList.add('node-edit-input-root');
+                    }
+                    input.style.width = '90%'; 
+                    input.style.height = 'calc(100% - 4px)'; 
+                    input.style.lineHeight = `${node.height -4}px`;
+
+                    input.addEventListener('blur', () => exitNodeTextEditMode(true));
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            exitNodeTextEditMode(true);
+                        } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            exitNodeTextEditMode(false);
+                        }
+                    });
+                    
+                    inputBody.appendChild(input);
+                    foreignObject.appendChild(inputBody);
+                    group.appendChild(foreignObject);
+
+                    setTimeout(() => {
+                        input.focus();
+                        input.select();
+                    }, 0);
+
+                } else {
+                    const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    textElement.setAttribute('x', node.width / 2);
+                    textElement.setAttribute('y', node.height / 2);
+                    textElement.textContent = node.text;
+                    textElement.classList.add('node-text');
+                    if(node.isRoot) { 
+                        textElement.classList.add('node-text-root');
+                    }
+                    group.appendChild(textElement);
+                }
+
                 const hasNoteContent = node.notes.text.trim() !== '' || node.notes.imageUrl.trim() !== '' || node.notes.documentName.trim() !== '';
-                if (hasNoteContent) {
+                if (hasNoteContent && node.id !== editingNodeTextId) { 
                     const iconG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                    iconG.innerHTML = noteIconSVG; // Usar o SVG como string
-                    // Posicionar o ícone, por exemplo, no canto superior direito do nó
-                    const iconX = node.width - 16; // 16 é um valor arbitrário para o tamanho/posição do ícone
-                    const iconY = 4;
+                    iconG.innerHTML = noteIconSVG; 
+                    const iconX = node.width - (node.isRoot ? 20 : 16); 
+                    const iconY = node.isRoot ? 6 : 4;
                     iconG.setAttribute('transform', `translate(${iconX}, ${iconY})`);
                     iconG.classList.add('note-icon');
                     iconG.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Prevenir que o clique no ícone selecione o nó ou inicie o arrasto
+                        e.stopPropagation(); 
                         openNotesPanel(node.id);
                     });
                     group.appendChild(iconG);
@@ -506,7 +870,32 @@
                 
                 svg.appendChild(group);
                 group.addEventListener('mousedown', (e) => handleNodeMouseDown(e, node, group));
-                group.addEventListener('click', (e) => handleNodeClick(e, node.id)); // Adicionado para garantir seleção ao clicar no nó, não apenas no mousedown
+                group.addEventListener('click', (e) => handleNodeClick(e, node.id)); 
+                group.addEventListener('dblclick', (e) => {
+                    if (editingNodeTextId === node.id) return; 
+                    e.stopPropagation();
+                    enterNodeTextEditMode(node.id);
+                });
+                group.addEventListener('contextmenu', (e) => { 
+                    e.preventDefault();
+                    if (isInputFocused() || editingNodeTextId !== null || notesPanel.classList.contains('visible')) { 
+                        return;
+                    }
+                    
+                    selectedNodeId = node.id; 
+                    // console.log('[CONTEXTMENU_EVENT] selectedNodeId set to:', selectedNodeId, 'for node text:', node.text); // DEBUG
+                    
+                    const currentSelectedNodeForDisplay = nodes.find(n => n.id === selectedNodeId);
+                    if (currentSelectedNodeForDisplay) {
+                        selectedNodeDisplay.textContent = currentSelectedNodeForDisplay.text;
+                    }
+                    
+                    document.querySelectorAll('.node.selected').forEach(el => el.classList.remove('selected'));
+                    const rectElement = group.querySelector('.node');
+                    if (rectElement) rectElement.classList.add('selected');
+                    
+                    showCustomContextMenu(e.clientX, e.clientY, node.id);
+                });
             });
             updateButtonStates();
         }
@@ -534,30 +923,26 @@
         }
 
         function handleNodeClick(event, nodeId) { 
-            // Não processar se o clique foi no ícone de nota
-            if (event.target.closest('.note-icon')) {
-                return;
+            // console.log('Node clicked. ID:', nodeId, 'Target:', event.target); // DEBUG
+            if (event.target.closest('.note-icon') || event.target.closest('foreignObject')) {
+                return; 
             }
+            if (editingNodeTextId === nodeId) return; 
+
             event.stopPropagation(); 
             selectedNodeId = nodeId;
             const selectedNode = nodes.find(n => n.id === selectedNodeId);
             selectedNodeDisplay.textContent = selectedNode ? selectedNode.text : 'Nenhum';
             renderMindMap(); 
+            hideCustomContextMenu(); 
         }
 
         function handleNodeMouseDown(event, node, element) {
-            if (event.target.closest('.note-icon')) {
-                return;
+            if (event.target.closest('.note-icon') || event.target.closest('foreignObject') || editingNodeTextId === node.id) {
+                return; 
             }
             event.stopPropagation();
             if (event.button !== 0) return; 
-
-            // A seleção já é tratada em handleNodeClick para consistência.
-            // Se quiser seleção no mousedown também (mais rápido visualmente):
-            // selectedNodeId = node.id;
-            // const selected = nodes.find(n => n.id === selectedNodeId);
-            // selectedNodeDisplay.textContent = selected ? selected.text : 'Nenhum';
-            // renderMindMap(); 
 
             isDraggingNode = true;
             draggedNodeElement = element;
@@ -567,6 +952,7 @@
             const svgP = pt.matrixTransform(CTM);
             dragOffsetX = svgP.x - node.x; dragOffsetY = svgP.y - node.y;
             draggedNodeElement.style.cursor = 'grabbing'; 
+            hideCustomContextMenu(); 
         }
 
         svg.addEventListener('mousemove', (e) => {
@@ -607,18 +993,32 @@
         });
 
         svg.addEventListener('mousedown', (e) => {
+            if (editingNodeTextId !== null && !e.target.closest('foreignObject') && !e.target.closest('.node-edit-input')) {
+                 exitNodeTextEditMode(true); 
+            }
+
             if (e.target === svg || e.target === mindMapContainer) { 
-                 if (e.button !== 0) return; 
-                isPanning = true;
-                lastPanPoint = { x: e.clientX, y: e.clientY };
-                svg.style.cursor = 'move';
-                if (selectedNodeId !== null && !isDraggingNode) { 
+                 if (e.button !== 0 && e.button !==2) return; 
+                 if (e.button === 0) { 
+                    isPanning = true;
+                    lastPanPoint = { x: e.clientX, y: e.clientY };
+                    svg.style.cursor = 'move';
+                 }
+                if (selectedNodeId !== null && !isDraggingNode && editingNodeTextId === null) { 
                     selectedNodeId = null;
                     selectedNodeDisplay.textContent = 'Nenhum';
                     renderMindMap();
                 }
+                hideCustomContextMenu(); 
             }
         });
+        svg.addEventListener('contextmenu', (e) => { 
+            if (e.target === svg || e.target === mindMapContainer) {
+                e.preventDefault();
+                hideCustomContextMenu();
+            }
+        });
+
 
         mindMapContainer.addEventListener('wheel', (e) => {
             e.preventDefault();
@@ -635,6 +1035,7 @@
                 viewBox.w += dw; viewBox.h += dh;
                 svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
             }
+            hideCustomContextMenu(); 
         });
         
         window.addEventListener('resize', () => {
@@ -647,73 +1048,23 @@
             svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
         });
 
-        addNodeBtn.addEventListener('click', () => {
-            const text = nodeTextInput.value;
-            if (nodes.some(n => n.isRoot)) {
-                showMessage('Já existe um nó raiz.', 'error'); return;
-            }
-            const initialX = viewBox.x + viewBox.w / 2 - 50; 
-            const initialY = viewBox.y + viewBox.h / 2 - 20; 
-            const newNode = createNode(text, initialX, initialY, null, true);
-            if (newNode) {
-                selectedNodeId = newNode.id; 
-                updateLines(); renderMindMap();
-                nodeTextInput.value = '';
-                showMessage(`Nó "${text}" adicionado como raiz.`);
-            }
-        });
-
-        addChildBtn.addEventListener('click', () => {
+        function attemptDeleteSelectedNode() {
+            // console.log('Attempting to delete node. Current selectedNodeId:', selectedNodeId); // DEBUG
             if (selectedNodeId === null) {
-                showMessage('Selecione um nó pai primeiro.', 'error'); return;
-            }
-            const text = nodeTextInput.value;
-            const parentNode = nodes.find(n => n.id === selectedNodeId);
-            if (parentNode) {
-                const childrenCount = parentNode.childrenIds.length;
-                const angleStep = Math.PI / (childrenCount + 3); 
-                const initialAngleOffset = -Math.PI / 2; 
-                const baseDistance = 100 + childrenCount * 15; 
-                const angle = initialAngleOffset + (childrenCount * angleStep) + (Math.random() * 0.2 - 0.1) ; 
-                const childX = parentNode.x + parentNode.width / 2 - 50 + Math.cos(angle) * baseDistance;
-                const childY = parentNode.y + parentNode.height / 2 - 20 + Math.sin(angle) * baseDistance;
-                const newNode = createNode(text, childX, childY, selectedNodeId);
-                if (newNode) {
-                    selectedNodeId = newNode.id; 
-                    updateLines(); renderMindMap();
-                    nodeTextInput.value = '';
-                    showMessage(`Nó "${text}" adicionado como filho de "${parentNode.text}".`);
-                }
-            }
-        });
-        
-        editNodeBtn.addEventListener('click', () => {
-            if (selectedNodeId === null) {
-                showMessage('Nenhum nó selecionado para editar.', 'error'); return;
-            }
-            const node = nodes.find(n => n.id === selectedNodeId);
-            if (node) {
-                const newText = prompt('Introduza o novo texto para o nó:', node.text);
-                if (newText !== null && newText.trim() !== '') {
-                    node.text = newText;
-                    node.width = Math.max(100, newText.length * 8 + 20); 
-                    updateLines(); renderMindMap();
-                    selectedNodeDisplay.textContent = newText; 
-                    showMessage(`Nó atualizado para "${newText}".`);
-                } else if (newText !== null && newText.trim() === '') {
-                    showMessage('O texto do nó não pode ficar vazio.', 'error');
-                }
-            }
-        });
-
-        deleteNodeBtn.addEventListener('click', () => {
-            if (selectedNodeId === null) {
-                showMessage('Nenhum nó selecionado para eliminar.', 'error'); return;
+                showMessage('Nenhum nó selecionado para eliminar.', 'error');
+                return;
             }
             const nodeToDelete = nodes.find(n => n.id === selectedNodeId);
-            if (!nodeToDelete) return;
+            if (!nodeToDelete) {
+                // console.error("attemptDeleteSelectedNode: Node with ID", selectedNodeId, "not found in nodes array:", nodes); // DEBUG
+                showMessage('Erro: Nó a ser eliminado não encontrado.', 'error');
+                return;
+            }
+
             const confirmationText = `Tem a certeza que quer eliminar o nó "${nodeToDelete.text}"${nodeToDelete.childrenIds.length > 0 ? ' e todos os seus descendentes' : ''}?`;
-            if (!window.confirm(confirmationText)) return;
+            if (!window.confirm(confirmationText)) { 
+                return;
+            }
             
             let nodesToDeleteIds = [selectedNodeId];
             let queue = [...nodeToDelete.childrenIds];
@@ -721,68 +1072,125 @@
                 const currentId = queue.shift();
                 nodesToDeleteIds.push(currentId);
                 const currentNode = nodes.find(n => n.id === currentId);
-                if (currentNode) queue.push(...currentNode.childrenIds);
+                if (currentNode) {
+                    if (!currentNode.childrenIds) currentNode.childrenIds = []; 
+                    queue.push(...currentNode.childrenIds);
+                }
             }
             nodes = nodes.filter(n => !nodesToDeleteIds.includes(n.id));
             nodes.forEach(n => {
+                if (!n.childrenIds) n.childrenIds = []; 
                 n.childrenIds = n.childrenIds.filter(childId => !nodesToDeleteIds.includes(childId));
             });
             const oldSelectedText = nodeToDelete.text;
+            if (editingNodeTextId === selectedNodeId) editingNodeTextId = null; 
             selectedNodeId = null; 
             selectedNodeDisplay.textContent = 'Nenhum';
             updateLines(); renderMindMap();
             showMessage(`Nó "${oldSelectedText}" e descendentes eliminados.`);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            // console.log('Keydown event:', e.key, 'selectedNodeId:', selectedNodeId, 'isInputFocused:', isInputFocused(), 'editingNodeTextId:', editingNodeTextId, 'notesPanelVisible:', notesPanel.classList.contains('visible'), 'contextMenuVisible:', customContextMenu.style.display); // DEBUG
+            if (e.key === 'Delete') {
+                if (selectedNodeId !== null && !isInputFocused() && editingNodeTextId === null && !notesPanel.classList.contains('visible') && customContextMenu.style.display === 'none') {
+                    // console.log('Attempting delete via Delete key for node ID:', selectedNodeId); // DEBUG
+                    attemptDeleteSelectedNode();
+                }
+            }
         });
+        
+        // Funções de Salvar e Abrir Mapa
+        saveMapBtn.addEventListener('click', () => {
+            if (nodes.length === 0) {
+                showMessage('Não há nada para salvar. Adicione alguns nós primeiro.', 'error');
+                return;
+            }
+            const mapData = {
+                nodes: nodes,
+                viewBox: viewBox,
+                nextNodeId: nextNodeId 
+            };
+            const jsonData = JSON.stringify(mapData, null, 2); 
+            const blob = new Blob([jsonData], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mapa-mental.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessage('Mapa salvo com sucesso!', 'success');
+        });
+
+        openMapInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+            if (file.type !== "application/json") {
+                showMessage('Por favor, selecione um ficheiro .json válido.', 'error');
+                event.target.value = null; 
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const mapData = JSON.parse(e.target.result);
+                    if (mapData && Array.isArray(mapData.nodes) && mapData.viewBox && typeof mapData.nextNodeId === 'number') {
+                        nodes = [];
+                        lines = [];
+                        selectedNodeId = null;
+                        editingNodeTextId = null;
+                        
+                        nodes = mapData.nodes;
+                        viewBox = mapData.viewBox;
+                        nextNodeId = mapData.nextNodeId;
+
+                        nodes.forEach(n => {
+                            if (!n.childrenIds) n.childrenIds = [];
+                            if (!n.notes) { 
+                                n.notes = { text: '', imageUrl: '', documentName: '' }; 
+                            }
+                        });
+
+
+                        svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+                        updateLines();
+                        renderMindMap();
+                        showMessage('Mapa carregado com sucesso!', 'success');
+                    } else {
+                        showMessage('Ficheiro de mapa mental inválido ou corrompido.', 'error');
+                    }
+                } catch (error) {
+                    showMessage('Erro ao ler o ficheiro do mapa mental: ' + error.message, 'error');
+                } finally {
+                    event.target.value = null; 
+                }
+            };
+            reader.onerror = () => {
+                showMessage('Erro ao ler o ficheiro.', 'error');
+                event.target.value = null;
+            };
+            reader.readAsText(file);
+        });
+
 
         function updateButtonStates() {
             const hasRootNode = nodes.some(n => n.isRoot);
-            const nodeSelected = selectedNodeId !== null;
+            const nodeSelected = selectedNodeId !== null; 
 
             addNodeBtn.disabled = hasRootNode; 
-            addChildBtn.disabled = !nodeSelected;
-            editNodeBtn.disabled = !nodeSelected;
-            deleteNodeBtn.disabled = !nodeSelected;
-            addEditNoteBtn.disabled = !nodeSelected; // Atualizar estado do novo botão
+            addChildBtn.disabled = !nodeSelected; 
+            editNodeBtn.disabled = !nodeSelected;   
+            deleteNodeBtn.disabled = !nodeSelected; 
+            addEditNoteBtn.disabled = !nodeSelected; 
+            saveMapBtn.disabled = nodes.length === 0; 
         }
         
-        renderMindMap(); // Renderização Inicial
+        renderMindMap(); 
     </script>
 </body>
 </html>
-```
-
-**Resumo das Alterações:**
-
-1.  **HTML (`controlsMenu`):**
-    * Adicionado um novo botão:
-        ```html
-        <div>
-            <button id="addEditNoteBtn" class="control-button" disabled>Adicionar/Editar Nota</button>
-        </div>
-        ```
-        Este botão foi colocado logo após o botão "Eliminar Nó".
-
-2.  **JavaScript:**
-    * **Referência ao Novo Botão:**
-        ```javascript
-        const addEditNoteBtn = document.getElementById('addEditNoteBtn'); 
-        ```
-    * **Event Listener para o Novo Botão:**
-        ```javascript
-        addEditNoteBtn.addEventListener('click', () => {
-            if (selectedNodeId !== null) {
-                openNotesPanel(selectedNodeId);
-            } else {
-                showMessage('Por favor, selecione um nó primeiro para adicionar ou editar uma nota.', 'error');
-            }
-        });
-        ```
-        Este listener verifica se um nó está selecionado e, em caso afirmativo, chama `openNotesPanel()` para esse nó.
-    * **Atualização de `updateButtonStates()`:**
-        A linha `addEditNoteBtn.disabled = !nodeSelected;` foi adicionada para ativar/desativar o novo botão com base na seleção de um nó.
-    * **Consistência no `handleNodeClick` e `handleNodeMouseDown`**:
-        * Adicionei um `eventListener` de `click` ao grupo do nó em `renderMindMap` para garantir que um clique (não apenas `mousedown`) seleciona o nó.
-        * No `handleNodeClick`, adicionei uma verificação para ignorar cliques no ícone de nota, já que eles têm sua própria lógica.
-        * A seleção de nó no `handleNodeMouseDown` foi comentada para centralizar a lógica de seleção no `handleNodeClick`, mas pode ser reativada se uma resposta visual mais rápida no `mousedown` for preferida.
-
-Agora, quando um nó estiver selecionado, o botão "Adicionar/Editar Nota" no menu de comandos ficará ativo. Clicar nele abrirá o painel de notas para o nó selecionado, permitindo que adiciones ou edites as suas not
